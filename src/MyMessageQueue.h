@@ -4,11 +4,15 @@
 
 class MyMessageQueue {
  public:
+  MyMessageQueue();
+  MyMessageQueue(int priority);
+  ~MyMessageQueue();
   void pop();
-  void push(Message message);
+  void push(Message* message);
   bool empty();
   int size();
+ private:
+  MQ* messageQueue;
 };
-        
 
 #endif
