@@ -7,7 +7,7 @@ class MyMessageQueue {
  public:
   MyMessageQueue();
   MyMessageQueue(int priority);
-  ~MyMessageQueue();
+  ~MyMessageQueue() {};
   std::shared_ptr<Message> top() const;
   void pop();
   void push(const std::shared_ptr<Message>& message);
