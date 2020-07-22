@@ -1,6 +1,7 @@
 #ifndef MY_LESS_PRIORITY_QUEUE_H
 #define MY_LESS_PRIORITY_QUEUE_H
 
+#include <vector>
 #include "Message.h"
 #include "MQ.h"
 
@@ -13,7 +14,7 @@ class MyLessPriorotyQueue : public MQ {
   bool empty();
   int size();
  private:
-  MQ** messageQueue;
+  std::vector<std::shared_ptr<MQ>> messageQueue;
 };
 
 #endif
