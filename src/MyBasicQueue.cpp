@@ -1,6 +1,8 @@
 #include "MyBasicQueue.h"
 
-MyBasicQueue::~MyBasicQueue() {}
+std::shared_ptr<Message> MyBasicQueue::top() const {
+  return MyBasicQueue::messageQueue.front();
+}
 
 void MyBasicQueue::pop() {
   MyBasicQueue::messageQueue.pop();

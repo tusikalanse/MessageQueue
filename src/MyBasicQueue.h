@@ -6,8 +6,9 @@
 
 class MyBasicQueue : public MQ {
  public:
-  MyBasicQueue();
-  ~MyBasicQueue();
+  MyBasicQueue() {};
+  ~MyBasicQueue() {};
+  std::shared_ptr<Message> top() const;
   void pop();
   void push(const std::shared_ptr<Message>& message);
   bool empty() const;

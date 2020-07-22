@@ -65,5 +65,11 @@ int main() {
   for (int i = 1; i <= 100; ++i) {
     MQ.push(std::shared_ptr<Message>(new Message(1, 2, to_string(rand()), 1)));
   }
+  for (int i = 1; i <= 100; ++i) {
+    shared_ptr<Message> M = MQ.top();
+    MQ.pop();
+    cout << MQ.size() << " " << boolalpha << MQ.empty() << " ";
+    cout << M->message << endl;
+  }
   return 0;
 }

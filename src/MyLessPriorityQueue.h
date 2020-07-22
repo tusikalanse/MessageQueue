@@ -8,6 +8,7 @@ class MyLessPriorotyQueue : public MQ {
  public:
   MyLessPriorotyQueue(int priority);
   ~MyLessPriorotyQueue();
+  std::shared_ptr<Message> top() const;
   void pop();
   void push(const std::shared_ptr<Message>& message);
   bool empty() const;

@@ -1,4 +1,3 @@
-#include <cstring>
 #include "Message.h"
 
 Message::Message(int _publisher, int _topic, std::string _message, int _id)
@@ -6,3 +5,5 @@ Message::Message(int _publisher, int _topic, std::string _message, int _id)
       topic(_topic),
       message(_message), 
       id(_id) {} 
+
+Message::~Message() {}
