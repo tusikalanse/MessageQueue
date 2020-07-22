@@ -33,7 +33,7 @@
 *.app
 
 # Test files
-test.cpp
+*test.cpp
 
 ### vscode ###
 .vscode/*
