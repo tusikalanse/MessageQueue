@@ -34,6 +34,6 @@ bool MyLessPriorityQueue::empty() const {
   return totalSize == 0;
 }
 
-int MyLessPriorityQueue::size() const {
+std::size_t MyLessPriorityQueue::size() const {
   return totalSize;
 }

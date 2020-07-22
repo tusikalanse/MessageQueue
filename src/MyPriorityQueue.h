@@ -14,7 +14,7 @@ class MyPriorityQueue : public MQ {
   void pop();
   void push(const std::shared_ptr<Message>& message);
   bool empty() const;
-  int size() const;
+  std::size_t size() const;
  private:
   constexpr static auto cmp = [] (const std::shared_ptr<Message>& lhs, const std::shared_ptr<Message>& rhs) {
     return std::dynamic_pointer_cast<PriorityMessage>(lhs)->priority > std::dynamic_pointer_cast<PriorityMessage>(rhs)->priority;

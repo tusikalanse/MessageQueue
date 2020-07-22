@@ -16,6 +16,6 @@ bool MyBasicQueue::empty() const {
   return MyBasicQueue::messageQueue.empty();
 }
 
-int MyBasicQueue::size() const {
+std::size_t MyBasicQueue::size() const {
   return MyBasicQueue::messageQueue.size();
 }

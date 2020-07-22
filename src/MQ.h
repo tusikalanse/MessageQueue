@@ -12,7 +12,7 @@ class MQ {
   virtual void pop() = 0;
   virtual void push(const std::shared_ptr<Message>& message) = 0;
   virtual bool empty() const = 0;
-  virtual int size() const = 0;
+  virtual std::size_t size() const = 0;
 };
 
 #endif

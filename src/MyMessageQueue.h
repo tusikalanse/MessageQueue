@@ -12,7 +12,7 @@ class MyMessageQueue {
   void pop();
   void push(const std::shared_ptr<Message>& message);
   bool empty() const;
-  int size() const;
+  std::size_t size() const;
  private:
   std::unique_ptr<MQ> messageQueue;
 };
