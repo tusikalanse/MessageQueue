@@ -14,7 +14,7 @@ class MyLessPriorotyQueue : public MQ {
   bool empty();
   int size();
  private:
-  std::vector<std::shared_ptr<MQ>> messageQueue;
+  std::vector<std::vector<std::shared_ptr<MQ>>> messageQueue;
 };
 
 #endif
