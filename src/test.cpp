@@ -57,13 +57,14 @@
 // }
 
 #include <bits/stdc++.h>
-#include "MyPriorityQueue.h"
+#include "MyMessageQueue.h"
+#include "PriorityMessage.h"
 using namespace std;
 
 int main() {
-  MyPriorityQueue MQ;
+  MyMessageQueue MQ(100);
   for (int i = 1; i <= 100; ++i) {
-    MQ.push(std::shared_ptr<Message>(new PriorityMessage(1, 2, to_string(rand()), 1, rand() % 10)));
+    MQ.push(std::shared_ptr<Message>(new PriorityMessage(1, 2, to_string(rand()), 1, rand() % 4)));
   }
   for (int i = 1; i <= 100; ++i) {
     shared_ptr<PriorityMessage> M = std::dynamic_pointer_cast<PriorityMessage>(MQ.top());
