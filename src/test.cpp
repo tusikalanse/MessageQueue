@@ -57,19 +57,19 @@
 // }
 
 #include <bits/stdc++.h>
-#include "MyBasicQueue.h"
+#include "MyLessPriorityQueue.h"
 using namespace std;
 
 int main() {
-  MyBasicQueue MQ;
+  MyLessPriorityQueue MQ(3);
   for (int i = 1; i <= 100; ++i) {
-    MQ.push(std::shared_ptr<Message>(new Message(1, 2, to_string(rand()), 1)));
+    MQ.push(std::shared_ptr<Message>(new PriorityMessage(1, 2, to_string(rand()), 1, rand() % 3)));
   }
   for (int i = 1; i <= 100; ++i) {
-    shared_ptr<Message> M = MQ.top();
+    shared_ptr<PriorityMessage> M = std::dynamic_pointer_cast<PriorityMessage>(MQ.top());
     MQ.pop();
     cout << MQ.size() << " " << boolalpha << MQ.empty() << " ";
-    cout << M->message << endl;
+    cout << M->message << " " << M->priority << endl;
   }
   return 0;
 }

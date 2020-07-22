@@ -6,10 +6,10 @@
 #include "MQ.h"
 #include "PriorityMessage.h"
 
-class MyPriorotyQueue : public MQ {
+class MyPriorityQueue : public MQ {
  public:
-  MyPriorotyQueue(int priority);
-  ~MyPriorotyQueue();
+  MyPriorityQueue(int priority);
+  ~MyPriorityQueue();
   std::shared_ptr<Message> top() const;
   void pop();
   void push(const std::shared_ptr<Message>& message);
