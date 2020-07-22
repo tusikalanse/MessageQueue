@@ -1,12 +1,14 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include <string>
+
 struct Message {
   int publisher;
   int topic;
-  char* message;
+  std::string message;
   int id;
-  Message(int _publisher, int _topic, char* _message, int _id);
+  Message(int _publisher, int _topic, std::string _message, int _id);
   virtual ~Message(); 
 };
 

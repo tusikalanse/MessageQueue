@@ -1,6 +1,8 @@
 #ifndef MY_MESSAGE_QUEUE_H
 #define MY_MESSAGE_QUEUE_H
+
 #include "Message.h"
+#include "MQ.h"
 
 class MyMessageQueue {
  public:
@@ -8,7 +10,7 @@ class MyMessageQueue {
   MyMessageQueue(int priority);
   ~MyMessageQueue();
   void pop();
-  void push(Message* message);
+  void push(const std::shared_ptr<Message>& message);
   bool empty();
   int size();
  private:
