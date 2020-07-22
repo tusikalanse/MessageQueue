@@ -6,7 +6,7 @@
 struct PriorityMessage : public Message {
   int priority; 
   PriorityMessage(int _publisher, int _topic, std::string _message, int _id, int _priority);
-  ~PriorityMessage(); 
+  ~PriorityMessage() {}; 
 };
 
 #endif
