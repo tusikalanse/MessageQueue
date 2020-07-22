@@ -14,7 +14,7 @@ class MyMessageQueue {
   bool empty();
   int size();
  private:
-  std::shared_ptr<MQ> messageQueue;
+  std::unique_ptr<MQ> messageQueue;
 };
 
 #endif
