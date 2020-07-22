@@ -2,7 +2,6 @@
 #define MY_BASIC_QUEUE_H
 
 #include <queue>
-#include "Message.h"
 #include "MQ.h"
 
 class MyBasicQueue : public MQ {

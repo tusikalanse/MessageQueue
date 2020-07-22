@@ -62,6 +62,8 @@ using namespace std;
 
 int main() {
   MyBasicQueue MQ;
-
+  for (int i = 1; i <= 100; ++i) {
+    MQ.push(std::shared_ptr<Message>(new Message(1, 2, to_string(rand()), 1)));
+  }
   return 0;
 }

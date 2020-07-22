@@ -2,7 +2,6 @@
 #define MY_LESS_PRIORITY_QUEUE_H
 
 #include <vector>
-#include "Message.h"
 #include "MQ.h"
 
 class MyLessPriorotyQueue : public MQ {

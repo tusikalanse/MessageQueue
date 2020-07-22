@@ -1,7 +1,6 @@
 #ifndef MY_MESSAGE_QUEUE_H
 #define MY_MESSAGE_QUEUE_H
 
-#include "Message.h"
 #include "MQ.h"
 
 class MyMessageQueue {
