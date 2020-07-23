@@ -9,6 +9,7 @@ class Subscription {
   Subscription() {};
   void addSubscription(const int topic, const int UserID);
   bool removeSubscription(const int topic, const int UserID);
+  __gnu_pbds::cc_hash_table<int, bool> getUsers(const int topic);
  private:
   __gnu_pbds::gp_hash_table<int, __gnu_pbds::cc_hash_table<int, bool>> subscription;
 };
