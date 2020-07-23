@@ -12,6 +12,7 @@ class NotACKMessage {
   NotACKMessage(const std::shared_ptr<Message>& _message, const __gnu_pbds::cc_hash_table<int, bool> _Users);
   bool ACK(const int UserID);
   const __gnu_pbds::cc_hash_table<int, bool>& getUsers() const;
+  bool empty() const;
  private:
   std::shared_ptr<Message> message;
   __gnu_pbds::cc_hash_table<int, bool> Users; 

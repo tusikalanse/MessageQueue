@@ -17,3 +17,7 @@ bool NotACKMessage::ACK(const int UserID) {
 const __gnu_pbds::cc_hash_table<int, bool>& NotACKMessage::getUsers() const {
   return Users;
 }
+
+bool NotACKMessage::empty() const {
+  return Users.empty();
+}
