@@ -3,7 +3,7 @@
 
 class Server {
   
-}
+};
 
 
 #endif
