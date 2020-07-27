@@ -1,3 +1,8 @@
+
+*
+!/**/
+!*.*
+
 ### c & cpp ###
 # Prerequisites
 *.d
@@ -40,3 +45,9 @@
 
 ### Makefile ###
 [Mm]akefile
+
+
+### cmake ###
+*/CMakeFiles
+*/CMake*
+*/cmake*
