@@ -9,6 +9,7 @@
 
 class Server {
  public:
+  Server();
   Server(int _port);
   int run();
   static void work(int client_sockfd);

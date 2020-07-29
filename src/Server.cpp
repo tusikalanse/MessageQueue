@@ -3,7 +3,9 @@
 #include <thread>
 #include "Server.h"
 
-Server::Server(int _port = 8000) : port(_port) {}
+Server::Server() : port(8000) {}
+
+Server::Server(int _port) : port(_port) {}
 
 int Server::run() {
   int server_sockfd;
@@ -43,14 +45,14 @@ void Server::work(int client_sockfd) {
   send(client_sockfd, "Welcome to my MQ!\n", 18, 0);
   int len;
   char buf[BUFSIZ];
-  while((len = recv(client_sockfd,buf,BUFSIZ,0)) > 0) {
-        buf[len] = '\0';
-        std::cout << buf << std::endl;
-        fflush(stdout);
-        if(send(client_sockfd,buf,len,0) < 0) {
-            perror("write error");
-            return;
-        }
+  while((len = recv(client_sockfd, buf, BUFSIZ, 0)) > 0) {
+    buf[len] = '\0';
+    std::cout << buf << std::endl;
+    fflush(stdout);
+    if(send(client_sockfd,buf,len,0) < 0) {
+      perror("write error");
+      return;
+    }
   }
   std::cout << "end " << client_sockfd << std::endl;
 }
