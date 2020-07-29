@@ -39,7 +39,7 @@
 */MQ
 
 # Test files
-*test.cpp
+*test*
 
 ### vscode ###
 .vscode/*
