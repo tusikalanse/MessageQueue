@@ -36,6 +36,7 @@
 *.exe
 *.out
 *.app
+*/MQ
 
 # Test files
 *test.cpp
@@ -45,7 +46,6 @@
 
 ### Makefile ###
 [Mm]akefile
-
 
 ### cmake ###
 */CMakeFiles
