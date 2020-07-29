@@ -4,9 +4,8 @@
 #include <stdint.h>
 
 struct Client {
-  int id;
-  unsigned int ip;
-  uint16_t port;
+  int UserID;
+  int socketID;
 };
 
 #endif
