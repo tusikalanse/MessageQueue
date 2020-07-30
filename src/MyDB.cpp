@@ -1,5 +1,6 @@
 #include <iostream>
 #include "MyDB.h"
+#include <cstdio>
 
 MyDB::MyDB() {
   mysql = mysql_init(NULL);
@@ -38,6 +39,7 @@ bool MyDB::execSQL(const std::string& sql) {
       row = mysql_fetch_row(res);
       if (!row) break;
       for (int j = 0; j < num_fields; ++j) {
+        printf("%s\n", row[j]);
         std::cout<<row[j]<<"\t\t";
       }
       std::cout<<std::endl;
@@ -54,4 +56,13 @@ bool MyDB::execSQL(const std::string& sql) {
     }
   }
   return true;
+}
+
+void MyDB::insertMessage(std::shared_ptr<Message>& message) {
+  std::string command = "INSERT INTO `message` VALUES(" + 
+                        std::to_string(message->id) + ", " +
+                        std::to_string(message->publisher) + ", " +
+                        std::to_string(message->topic) + ", " +
+                        message->message;
+  if (typeid(message). == )
 }
