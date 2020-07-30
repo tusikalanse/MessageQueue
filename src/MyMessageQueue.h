@@ -17,4 +17,4 @@ class MyMessageQueue {
   std::unique_ptr<MQ> messageQueue;
 };
 
-#endif
+#endif /* MY_MESSAGE_QUEUE_H */

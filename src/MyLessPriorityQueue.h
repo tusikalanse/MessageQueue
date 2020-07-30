@@ -20,4 +20,4 @@ class MyLessPriorityQueue : public MQ {
   std::vector<std::queue<std::shared_ptr<Message>>> messageQueue;
 };
 
-#endif
+#endif /* MY_LESS_PRIORITY_QUEUE_H */

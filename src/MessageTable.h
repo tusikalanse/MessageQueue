@@ -15,4 +15,4 @@ class MessageTable {
   __gnu_pbds::gp_hash_table<int, std::shared_ptr<NotACKMessage>> table;
 };
 
-#endif
+#endif /* MESSAGE_TABLE_H */

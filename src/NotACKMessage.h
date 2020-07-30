@@ -1,5 +1,5 @@
-#ifndef NOT_ACK_MESSAGE
-#define NOT_ACK_MESSAGE
+#ifndef NOT_ACK_MESSAGE_H
+#define NOT_ACK_MESSAGE_H
 
 #include <memory>
 #include <ext/pb_ds/assoc_container.hpp>
@@ -18,4 +18,4 @@ class NotACKMessage {
   __gnu_pbds::cc_hash_table<int, bool> Users; 
 };
 
-#endif
+#endif /* NOT_ACK_MESSAGE_H */

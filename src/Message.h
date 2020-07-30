@@ -12,4 +12,4 @@ struct Message {
   virtual ~Message(); 
 };
 
-#endif
+#endif /* MESSAGE_H */

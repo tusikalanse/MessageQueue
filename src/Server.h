@@ -18,4 +18,4 @@ class Server {
 };
 
 
-#endif
+#endif /* SERVER_H */

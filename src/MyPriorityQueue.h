@@ -25,4 +25,4 @@ class MyPriorityQueue : public MQ {
   std::priority_queue<std::shared_ptr<Message>, std::vector<std::shared_ptr<Message>>, PriorityMessageComparator> messageQueue;
 };
 
-#endif
+#endif /* MY_PRIORITY_QUEUE_H */

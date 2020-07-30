@@ -8,4 +8,4 @@ struct Client {
   int socketID;
 };
 
-#endif
+#endif /* CLIENT_H */

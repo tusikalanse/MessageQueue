@@ -17,4 +17,4 @@ class MyBasicQueue : public MQ {
   std::queue<std::shared_ptr<Message>> messageQueue;
 };
 
-#endif
+#endif /* MY_BASIC_QUEUE_H */

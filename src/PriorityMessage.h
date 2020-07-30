@@ -9,4 +9,4 @@ struct PriorityMessage : public Message {
   ~PriorityMessage() {}; 
 };
 
-#endif
+#endif /* PRIORITY_MESSAGE_H */

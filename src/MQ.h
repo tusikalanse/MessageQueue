@@ -15,4 +15,4 @@ class MQ {
   virtual std::size_t size() const = 0;
 };
 
-#endif
+#endif /* MQ_H */

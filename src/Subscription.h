@@ -14,4 +14,4 @@ class Subscription {
   __gnu_pbds::gp_hash_table<int, __gnu_pbds::cc_hash_table<int, bool>> subscription;
 };
 
-#endif
+#endif /* SUBSCRIPTION_H */

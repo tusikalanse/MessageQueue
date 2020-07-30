@@ -34,4 +34,4 @@ class Broker {
   Subscription subscription;
 };
 
-#endif
+#endif /* BROKER_H */
