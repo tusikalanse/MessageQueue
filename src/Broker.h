@@ -2,6 +2,7 @@
 #define BROKER_H
 
 #include <cstdio>
+#include <queue>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -23,13 +24,14 @@ class Broker {
   void work(int client_sockfd);
   std::shared_ptr<Message> getMessage(char str[]);
   void sendMessage(std::shared_ptr<Message> message);
+  void resendAll();
  private:
   int nextUserID;
   int nextMessageID;
   const in_port_t port;
   const int refreshTimeout;
   MyMessageQueue messageQueue;
-  __gnu_pbds::gp_hash_table<int, int> socketTable;
+  __gnu_pbds::gp_hash_table<int, std::pair<int,std::queue<int>>> socketTable;
   MessageTable table; 
   Subscription subscription;
 };

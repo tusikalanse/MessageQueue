@@ -279,6 +279,7 @@ int main() {
     }
     for (int n = 0; n < nfds; ++n) {
       if (events[n].data.fd == listenfd) {
+        if (!(events[n].events & EPOLLIN)) continue;
         struct sockaddr_in cliaddr;
         socklen_t len = sizeof(cliaddr);
         int connfd = accept(listenfd, (sockaddr *)&cliaddr, &len);
@@ -289,7 +290,7 @@ int main() {
           continue;
         }
         setnonblocking(connfd);
-        ev.events = EPOLLIN | EPOLLET;
+        ev.events = EPOLLIN | EPOLLET | EPOLLOUT;
         ev.data.fd = connfd;
         if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev)) {
             perror("epoll_ctl EPOLL_CTL_ADD fail");
@@ -300,7 +301,8 @@ int main() {
         inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
         uint16_t port = ntohs(cliaddr.sin_port);
         printf("connection from %s, port %d\n", buff, port);
-      } else if (events[n].events & EPOLLIN) {
+      } 
+      else if (events[n].events & EPOLLIN) {
         char buffer[MAX_LEN + 1]; 
         int connfd = events[n].data.fd;
         while (1) {
@@ -308,7 +310,7 @@ int main() {
           int ret = recv(connfd, buffer, MAX_LEN, 0);
           if (ret < 0) {
             if ( (errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-              puts("read later");
+              //puts("read later");
               break;
             }
             close(connfd);
@@ -318,10 +320,13 @@ int main() {
             close(connfd);
           }
           else {
-            printf("%d: %s\n", ret, buffer);
+            //printf("%d: %s\n", ret, buffer);
           }
         }
-      } 
+      }
+      else if (events[n].events & EPOLLOUT) {
+        
+      }
     }
   }
 }

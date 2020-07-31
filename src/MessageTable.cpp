@@ -1,16 +1,17 @@
 #include "MessageTable.h"
 
-void MessageTable::addMessage(const int id, const std::shared_ptr<NotACKMessage>& message) {
+void MessageTable::addMessage(const int id, const std::pair<std::shared_ptr<Message>, int>& message) {
   table[id] = message;
 }
 
-void MessageTable::ACK(const int messageID, const int UserID) {
+void MessageTable::ACK(const int messageID) {
   if (table.find(messageID) == table.end())
     return;
-  table[messageID]->ACK(UserID);
-  
+  if (--table[messageID].second == 0) {
+    table.erase(messageID);
+  }
 }
 
-__gnu_pbds::gp_hash_table<int, std::shared_ptr<NotACKMessage>>& MessageTable::getHashTable() {
-  return table;
+std::shared_ptr<Message> MessageTable::getMessage(const int messageID) {
+  return table[messageID].first;
 }
