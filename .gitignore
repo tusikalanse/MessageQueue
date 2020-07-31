@@ -44,9 +44,6 @@
 ### vscode ###
 .vscode/*
 
-### Makefile ###
-[Mm]akefile
-
 ### cmake ###
 */CMakeFiles
 */CMake*
