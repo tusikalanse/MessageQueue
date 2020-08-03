@@ -91,7 +91,8 @@ void Broker::server(int server_sockfd) {
   unsigned int sin_size = sizeof(client_addr);
   while (1) {
     int client_fd = accept(server_sockfd, (struct sockaddr *)&client_addr, &sin_size);
-    socketTable[nextUserID++] = std::make_pair(client_fd, std::queue<int>());
+    int newID = nextUserID++;
+    socketTable[newID] = Client(newID, client_fd);
     std::thread client(&Broker::work, this, client_fd);
     client.detach();
   }
@@ -112,15 +113,15 @@ std::shared_ptr<Message> Broker::getMessage(char str[]) {
 
 void Broker::sendMessage(std::shared_ptr<Message> message) {
   for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
-    int clientID = socketTable[UserID.first].first;
-    if (socketTable[UserID.first].second.empty()) {
+    int clientID = socketTable[UserID.first].socketID;
+    if (socketTable[UserID.first].que.empty()) {
       if (send(clientID, message->message.c_str(), message->message.size(), 0) < 0) {
         perror("write error");
         return;
       }
     }
     else {
-      socketTable[UserID.first].second.push(message->id);
+      socketTable[UserID.first].que.push(message->id);
     }
   }
 }
@@ -128,10 +129,10 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
 void Broker::resendAll() {
   for(;;) {
     sleep(1);
-    for (std::pair<int, std::pair<int, std::queue<int>>> User : socketTable) {
-      if (User.second.second.empty()) continue;
-      std::shared_ptr<Message> message = table.getMessage(User.second.second.front());
-      if (send(User.second.first, message->message.c_str(), message->message.size(), 0) < 0) {
+    for (std::pair<const int, Client>& User : socketTable) {
+      if (User.second.que.empty()) continue;
+      std::shared_ptr<Message> message = table.getMessage(User.second.que.front());
+      if (send(User.second.socketID, message->message.c_str(), message->message.size(), 0) < 0) {
         perror("write error");
         return;
       }

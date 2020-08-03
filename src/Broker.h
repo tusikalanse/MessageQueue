@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/hash_policy.hpp>
+#include "Client.h"
 #include "MessageTable.h"
 #include "MyMessageQueue.h"
 #include "Subscription.h"
@@ -31,7 +32,8 @@ class Broker {
   const in_port_t port;
   const int refreshTimeout;
   MyMessageQueue messageQueue;
-  __gnu_pbds::gp_hash_table<int, std::pair<int,std::queue<int>>> socketTable;
+  __gnu_pbds::gp_hash_table<int, Client> socketTable;
+  __gnu_pbds::gp_hash_table<int, int> IDTable;
   MessageTable table; 
   Subscription subscription;
 };

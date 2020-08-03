@@ -106,11 +106,11 @@
 //   return 0;
 // }
 
-// #include <bits/stdc++.h>
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <netinet/in.h>
-// #include <arpa/inet.h>
+#include <bits/stdc++.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 // using namespace std;
 
 // int main(int argc, char *argv[])
@@ -121,7 +121,7 @@
 //     struct sockaddr_in my_addr;   //服务器网络地址结构体
 //     struct sockaddr_in remote_addr; //客户端网络地址结构体
 //     unsigned int sin_size;
-//     char buf[BUFSIZ];  //数据传送的缓冲区
+    char buf[BUFSIZ];  //数据传送的缓冲区
 //     memset(&my_addr,0,sizeof(my_addr)); //数据初始化--清零
 //     my_addr.sin_family=AF_INET; //设置为IP通信
 //     my_addr.sin_addr.s_addr=INADDR_ANY;//服务器IP地址--允许连接到所有本地地址上
@@ -222,6 +222,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include "network.h"
+
 #define MAX_EVENTS 1000
 #define MAX_LEN 1024
 
@@ -320,9 +322,15 @@ int main() {
             close(connfd);
           }
           else {
-            //printf("%d: %s\n", ret, buffer);
+            printf("%d: %s\n", ret, buffer);
           }
         }
+        buffer[0] = '1';
+        buffer[1] = '2';
+        buffer[2] = '3';
+        buffer[3] = '4';
+        buffer[4] = 0;
+        send(connfd, buffer, strlen(buffer), 0);
       }
       else if (events[n].events & EPOLLOUT) {
         
