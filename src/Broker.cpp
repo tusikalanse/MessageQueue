@@ -130,6 +130,19 @@ void Broker::server() {
           close(connfd);
           continue;
         }
+        int UserID = nextUserID++;
+        socketTable[UserID] = Client(UserID, connfd);
+        //test 
+        if (UserID >= 3) {
+          printf("%d subscribed: ", UserID);
+          for (int i = 0; i < 10; ++i) {
+            if (rand() % 3 == 1) {
+              printf(" %d", i);
+              subscription.addSubscription(i, UserID);
+            }
+          }
+          puts("");
+        }
         char buff[INET_ADDRSTRLEN + 1] = {0};
         inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
         uint16_t port = ntohs(cliaddr.sin_port);
@@ -165,6 +178,7 @@ std::shared_ptr<Message> Broker::getMessage(char str[]) {
 }
 
 void Broker::sendMessage(std::shared_ptr<Message> message) {
+  printf("sending message topic is %d\n", message->topic);
   for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
     int clientID = socketTable[UserID.first].socketID;
     if (socketTable[UserID.first].que.empty()) {
