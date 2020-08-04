@@ -12,7 +12,7 @@ struct Client {
   int checkIDX = 0;
   int writeIDX = 0;
   std::queue<int> que;
-  Client() = delete;
+  Client() = default;
   Client(int _userID, int _socketID) : UserID(_userID), socketID(_socketID) {}
 };
 

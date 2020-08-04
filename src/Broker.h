@@ -21,12 +21,14 @@ class Broker {
   Broker(in_port_t _port, int priority);
   Broker(in_port_t _port, int priority, int _refreshTimeout);
   void run();
-  void server(int server_sockfd);
+  void server();
   void work(int client_sockfd);
   std::shared_ptr<Message> getMessage(char str[]);
   void sendMessage(std::shared_ptr<Message> message);
   void resendAll();
  private:
+  static const int MAX_EVENTS = 1000;
+  static const int MAX_LEN = 1024;
   int nextUserID;
   int nextMessageID;
   const in_port_t port;

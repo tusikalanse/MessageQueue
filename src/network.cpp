@@ -2,6 +2,7 @@
 
 #include <arpa/inet.h>
 #include <cstdio>
+#include <cstring>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -35,6 +36,10 @@ int network::read(int sockfd, char* buf) {
     else if (ret == 0) {
       close(sockfd);
     }  
+    else {
+      buf[ret] = '\0';
+      printf("%d %d: %s\n", ret, strlen(buf), buf);
+    }
   }
   return res;
 }

@@ -106,11 +106,11 @@
 //   return 0;
 // }
 
-#include <bits/stdc++.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+// #include <bits/stdc++.h>
+// #include <sys/types.h>
+// #include <sys/socket.h>
+// #include <netinet/in.h>
+// #include <arpa/inet.h>
 // using namespace std;
 
 // int main(int argc, char *argv[])
@@ -121,7 +121,7 @@
 //     struct sockaddr_in my_addr;   //服务器网络地址结构体
 //     struct sockaddr_in remote_addr; //客户端网络地址结构体
 //     unsigned int sin_size;
-    char buf[BUFSIZ];  //数据传送的缓冲区
+//     char buf[BUFSIZ];  //数据传送的缓冲区
 //     memset(&my_addr,0,sizeof(my_addr)); //数据初始化--清零
 //     my_addr.sin_family=AF_INET; //设置为IP通信
 //     my_addr.sin_addr.s_addr=INADDR_ANY;//服务器IP地址--允许连接到所有本地地址上
@@ -209,7 +209,7 @@
 //   return 0;
 // }
 
-
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -222,119 +222,95 @@
 #include <errno.h>
 #include <string.h>
 
+#include "Broker.h"
 #include "network.h"
 
 #define MAX_EVENTS 1000
 #define MAX_LEN 1024
 
-void setnonblocking(int sockfd) {
-    int flag = fcntl(sockfd, F_GETFL, 0);
-    if (flag < 0) {
-        perror("fcntl F_GETFL fail");
-        return;
-    }
-    if (fcntl(sockfd, F_SETFL, flag | O_NONBLOCK) < 0) {
-        perror("fcntl F_SETFL fail");
-    }
-}
-
 int main() {
-  int listenfd;
-  struct sockaddr_in servaddr;
-  short port = 8000;
-  servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  servaddr.sin_port = htons(port);
-  listenfd = socket(AF_INET, SOCK_STREAM, 0);
-  setnonblocking(listenfd); 
-  int res = bind(listenfd, (sockaddr *)&servaddr, sizeof(servaddr));
-  if (0 == res)
-    printf("server bind success, 0.0.0.0:%d\n", port);
-  else {
-    perror("bind fail");
-    exit(EXIT_FAILURE);
-  }
-  res = listen(listenfd, 128);
-  if (0 == res)
-    printf("server listen success\n");
-  else {
-    perror("listen fail");
-    exit(EXIT_FAILURE);
-  }
-  struct epoll_event ev, events[MAX_EVENTS];
-  int epollfd = epoll_create1(0);
-  if (-1 == epollfd) {
-    perror("epoll_create1");
-    exit(EXIT_FAILURE);
-  }
-  ev.events = EPOLLIN; 
-  ev.data.fd = listenfd;
-  if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &ev)) {
-    perror("epoll_ctl EPOLL_CTL_ADD fail");
-    exit(EXIT_FAILURE);
-  }
-  for (;;) {
-    int nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
-    if (-1 == nfds) {
-      perror("epoll_wait fail");
-      exit(EXIT_FAILURE);
-    }
-    for (int n = 0; n < nfds; ++n) {
-      if (events[n].data.fd == listenfd) {
-        if (!(events[n].events & EPOLLIN)) continue;
-        struct sockaddr_in cliaddr;
-        socklen_t len = sizeof(cliaddr);
-        int connfd = accept(listenfd, (sockaddr *)&cliaddr, &len);
-        printf("connfd is %d\n", connfd);
-        fflush(stdout);
-        if (-1 == connfd) {
-          perror("accept fail");
-          continue;
-        }
-        setnonblocking(connfd);
-        ev.events = EPOLLIN | EPOLLET | EPOLLOUT;
-        ev.data.fd = connfd;
-        if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev)) {
-            perror("epoll_ctl EPOLL_CTL_ADD fail");
-            close(connfd);
-            continue;
-        }
-        char buff[INET_ADDRSTRLEN + 1] = {0};
-        inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
-        uint16_t port = ntohs(cliaddr.sin_port);
-        printf("connection from %s, port %d\n", buff, port);
-      } 
-      else if (events[n].events & EPOLLIN) {
-        char buffer[MAX_LEN + 1]; 
-        int connfd = events[n].data.fd;
-        while (1) {
-          memset(buffer, 0, sizeof(buffer));
-          int ret = recv(connfd, buffer, MAX_LEN, 0);
-          if (ret < 0) {
-            if ( (errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-              //puts("read later");
-              break;
-            }
-            close(connfd);
-            break;
-          }
-          else if (ret == 0) {
-            close(connfd);
-          }
-          else {
-            printf("%d: %s\n", ret, buffer);
-          }
-        }
-        buffer[0] = '1';
-        buffer[1] = '2';
-        buffer[2] = '3';
-        buffer[3] = '4';
-        buffer[4] = 0;
-        send(connfd, buffer, strlen(buffer), 0);
-      }
-      else if (events[n].events & EPOLLOUT) {
+  Broker server(8000);
+  server.run();
+  // int listenfd;
+  // struct sockaddr_in servaddr;
+  // short port = 8000;
+  // servaddr.sin_family = AF_INET;
+  // servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  // servaddr.sin_port = htons(port);
+  // listenfd = socket(AF_INET, SOCK_STREAM, 0);
+  // network::setnonblocking(listenfd); 
+  // int res = bind(listenfd, (sockaddr *)&servaddr, sizeof(servaddr));
+  // if (0 == res)
+  //   printf("server bind success, 0.0.0.0:%d\n", port);
+  // else {
+  //   perror("bind fail");
+  //   exit(EXIT_FAILURE);
+  // }
+  // res = listen(listenfd, 128);
+  // if (0 == res)
+  //   printf("server listen success\n");
+  // else {
+  //   perror("listen fail");
+  //   exit(EXIT_FAILURE);
+  // }
+  // struct epoll_event ev, events[MAX_EVENTS];
+  // int epollfd = epoll_create1(0);
+  // if (-1 == epollfd) {
+  //   perror("epoll_create1");
+  //   exit(EXIT_FAILURE);
+  // }
+  // ev.events = EPOLLIN; 
+  // ev.data.fd = listenfd;
+  // if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, listenfd, &ev)) {
+  //   perror("epoll_ctl EPOLL_CTL_ADD fail");
+  //   exit(EXIT_FAILURE);
+  // }
+  // for (;;) {
+  //   int nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+  //   if (-1 == nfds) {
+  //     perror("epoll_wait fail");
+  //     exit(EXIT_FAILURE);
+  //   }
+  //   for (int n = 0; n < nfds; ++n) {
+  //     if (events[n].data.fd == listenfd) {
+  //       if (!(events[n].events & EPOLLIN)) continue;
+  //       struct sockaddr_in cliaddr;
+  //       socklen_t len = sizeof(cliaddr);
+  //       int connfd = accept(listenfd, (sockaddr *)&cliaddr, &len);
+  //       printf("connfd is %d\n", connfd);
+  //       fflush(stdout);
+  //       if (-1 == connfd) {
+  //         perror("accept fail");
+  //         continue;
+  //       }
+  //       network::setnonblocking(connfd);
+  //       ev.events = EPOLLIN | EPOLLET | EPOLLOUT;
+  //       ev.data.fd = connfd;
+  //       if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev)) {
+  //           perror("epoll_ctl EPOLL_CTL_ADD fail");
+  //           close(connfd);
+  //           continue;
+  //       }
+  //       char buff[INET_ADDRSTRLEN + 1] = {0};
+  //       inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
+  //       uint16_t port = ntohs(cliaddr.sin_port);
+  //       printf("connection from %s, port %d\n", buff, port);
+  //     } 
+  //     else if (events[n].events & EPOLLIN) {
+  //       char buffer[MAX_LEN + 1]; 
+  //       int connfd = events[n].data.fd;
+  //       network::read(connfd, buffer);
+  //       buffer[0] = '1';
+  //       buffer[1] = '2';
+  //       buffer[2] = '3';
+  //       buffer[3] = '4';
+  //       buffer[4] = 0;
+  //       std::cout << "send back" << std::endl;
+  //       send(connfd, buffer, strlen(buffer), 0);
+  //     }
+  //     else if (events[n].events & EPOLLOUT) {
         
-      }
-    }
-  }
+  //     }
+  //   }
+  // }
 }

@@ -3,7 +3,9 @@
 #include <string>
 #include <thread>
 #include <unistd.h>
+#include <sys/epoll.h>
 #include "Broker.h"
+#include "network.h"
 
 Broker::Broker() : 
     nextMessageID(0),
@@ -42,6 +44,28 @@ Broker::Broker(in_port_t _port, int priority, int _refreshTimeout) :
   {}
 
 void Broker::run() {
+  std::thread listener(&Broker::server, this);
+  listener.detach();
+
+  std::thread ticker(&Broker::resendAll, this);
+  ticker.detach();
+
+  while (1) {
+    if (messageQueue.empty()) {
+      //sleep(1);
+      //std::cout << "empty message queue" << std::endl;
+      continue;
+    }
+    //std::cout << "message queue size is " << messageQueue.size() << std::endl;
+    std::cout << "nextMessageID is " << nextMessageID << std::endl;
+    std::shared_ptr<Message> message = messageQueue.top();
+    messageQueue.pop();
+    // TODO : ACK message
+    sendMessage(message);
+  }
+}
+
+void Broker::server() {
   int server_sockfd;
   sockaddr_in server_addr;
   memset(&server_addr, 0, sizeof(server_addr));
@@ -64,37 +88,64 @@ void Broker::run() {
     return;
   }
 
-  std::thread listener(&Broker::server, this, server_sockfd);
-  listener.detach();
-
-  std::thread ticker(&Broker::resendAll, this);
-  ticker.detach();
-
-  while (1) {
-    if (messageQueue.empty()) {
-      //sleep(1);
-      //std::cout << "empty message queue" << std::endl;
-      continue;
-    }
-    //std::cout << "message queue size is " << messageQueue.size() << std::endl;
-    std::cout << "nextMessageID is " << nextMessageID << std::endl;
-    std::shared_ptr<Message> message = messageQueue.top();
-    messageQueue.pop();
-    // TODO : ACK message
-    sendMessage(message);
+  struct epoll_event ev, events[MAX_EVENTS];
+  int epollfd = epoll_create1(0);
+  if (-1 == epollfd) {
+    perror("epoll_create1");
+    exit(EXIT_FAILURE);
   }
-}
+  ev.events = EPOLLIN; 
+  ev.data.fd = server_sockfd;
+  if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, server_sockfd, &ev)) {
+    perror("epoll_ctl EPOLL_CTL_ADD fail");
+    exit(EXIT_FAILURE);
+  }
 
-void Broker::server(int server_sockfd) {
   int client_sockfd;
   sockaddr_in client_addr;
   unsigned int sin_size = sizeof(client_addr);
   while (1) {
-    int client_fd = accept(server_sockfd, (struct sockaddr *)&client_addr, &sin_size);
-    int newID = nextUserID++;
-    socketTable[newID] = Client(newID, client_fd);
-    std::thread client(&Broker::work, this, client_fd);
-    client.detach();
+    int nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+    if (-1 == nfds) {
+      perror("epoll_wait fail");
+      exit(EXIT_FAILURE);
+    }
+    for (int n = 0; n < nfds; ++n) {
+      if (events[n].data.fd == server_sockfd) {
+        if (!(events[n].events & EPOLLIN)) continue;
+        struct sockaddr_in cliaddr;
+        socklen_t len = sizeof(cliaddr);
+        int connfd = accept(server_sockfd, (sockaddr *)&cliaddr, &len);
+        printf("connfd is %d\n", connfd);
+        fflush(stdout);
+        if (-1 == connfd) {
+          perror("accept fail");
+          continue;
+        }
+        network::setnonblocking(connfd);
+        ev.events = EPOLLIN | EPOLLET | EPOLLOUT;
+        ev.data.fd = connfd;
+        if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev)) {
+            perror("epoll_ctl EPOLL_CTL_ADD fail");
+            close(connfd);
+            continue;
+        }
+        char buff[INET_ADDRSTRLEN + 1] = {0};
+        inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
+        uint16_t port = ntohs(cliaddr.sin_port);
+        printf("connection from %s, port %d\n", buff, port);
+      } 
+      else if (events[n].events & EPOLLIN) {
+        char buffer[MAX_LEN + 1]; 
+        int connfd = events[n].data.fd;
+        if (network::read(connfd, buffer)) {
+          messageQueue.push(getMessage(buffer));
+        }
+      }
+      else if (events[n].events & EPOLLOUT) {
+        
+      }
+    }
   }
 }
 
