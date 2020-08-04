@@ -126,9 +126,9 @@ void Broker::server() {
         ev.events = EPOLLIN | EPOLLET | EPOLLOUT;
         ev.data.fd = connfd;
         if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev)) {
-            perror("epoll_ctl EPOLL_CTL_ADD fail");
-            close(connfd);
-            continue;
+          perror("epoll_ctl EPOLL_CTL_ADD fail");
+          close(connfd);
+          continue;
         }
         char buff[INET_ADDRSTRLEN + 1] = {0};
         inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
@@ -137,9 +137,10 @@ void Broker::server() {
       } 
       else if (events[n].events & EPOLLIN) {
         char buffer[MAX_LEN + 1]; 
-        int connfd = events[n].data.fd;
-        if (network::read(connfd, buffer)) {
+        int connfd = events[n].data.fd, res;
+        if (res = network::read(connfd, buffer)) {
           messageQueue.push(getMessage(buffer));
+          printf("received %d bytes\n", res);
         }
       }
       else if (events[n].events & EPOLLOUT) {
@@ -149,6 +150,7 @@ void Broker::server() {
   }
 }
 
+/*
 void Broker::work(int client_sockfd) {
   int len;
   char buf[BUFSIZ];
@@ -156,7 +158,7 @@ void Broker::work(int client_sockfd) {
     buf[len] = '\0';
     messageQueue.push(getMessage(buf));
   }
-}
+}*/
 
 std::shared_ptr<Message> Broker::getMessage(char str[]) {
   return std::make_shared<Message>(Message(0, rand() % 10, str, nextMessageID++));

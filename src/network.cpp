@@ -25,7 +25,6 @@ int network::read(int sockfd, char* buf) {
   int res = 0;
   while (1) {
     int ret = recv(sockfd, buf, BUFSIZ, 0);
-    res += ret;
     if (ret < 0) {
       if ( (errno == EAGAIN) || (errno == EWOULDBLOCK)) {
         break;
@@ -38,7 +37,11 @@ int network::read(int sockfd, char* buf) {
     }  
     else {
       buf[ret] = '\0';
+      res += ret;
       printf("%d %d: %s\n", ret, strlen(buf), buf);
+      //test 
+      // puts("sending back");
+      // ::send(sockfd, buf, strlen(buf), 0);
     }
   }
   return res;
