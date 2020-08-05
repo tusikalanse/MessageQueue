@@ -22,15 +22,15 @@ class Broker {
   Broker(in_port_t _port, int priority, int _refreshTimeout);
   void run();
   void server();
-  //void work(int client_sockfd);
+  void work(int client_sockfd);
   std::shared_ptr<Message> getMessage(char str[]);
   void sendMessage(std::shared_ptr<Message> message);
   void resendAll();
  private:
   static const int MAX_EVENTS = 1000;
   static const int MAX_LEN = 1024;
-  int nextUserID;
-  int nextMessageID;
+  int nextUserID = 0;
+  int nextMessageID = 0;
   const in_port_t port;
   const int refreshTimeout;
   MyMessageQueue messageQueue;

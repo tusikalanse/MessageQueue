@@ -24,7 +24,7 @@ void network::setnonblocking(int sockfd) {
 int network::read(int sockfd, char* buf) {
   int res = 0;
   while (1) {
-    int ret = recv(sockfd, buf, BUFSIZ, 0);
+    int ret = recv(sockfd, buf, 1024, 0);
     if (ret < 0) {
       if ( (errno == EAGAIN) || (errno == EWOULDBLOCK)) {
         break;
@@ -45,4 +45,20 @@ int network::read(int sockfd, char* buf) {
     }
   }
   return res;
+}
+
+int network::send(int sockfd, const char* buf, int len) {
+  int pos = 0;
+  while (pos < len) {
+    int ret = ::send(sockfd, buf + pos, len - pos, 0);
+    if (-1 == ret) {
+      if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR)) {
+        ret = 0;
+        continue;
+      }
+      break;
+    }
+    pos += ret;
+  }
+  return pos;
 }

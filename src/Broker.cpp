@@ -8,7 +8,6 @@
 #include "network.h"
 
 Broker::Broker() : 
-    nextMessageID(0),
     refreshTimeout(1), 
     messageQueue(), 
     table(), 
@@ -17,7 +16,6 @@ Broker::Broker() :
   {}
 
 Broker::Broker(in_port_t _port) : 
-    nextMessageID(0),
     refreshTimeout(1), 
     messageQueue(), 
     table(), 
@@ -26,7 +24,6 @@ Broker::Broker(in_port_t _port) :
   {}
 
 Broker::Broker(in_port_t _port, int priority) : 
-    nextMessageID(0),
     refreshTimeout(1), 
     messageQueue(priority), 
     table(), 
@@ -35,7 +32,6 @@ Broker::Broker(in_port_t _port, int priority) :
   {}
 
 Broker::Broker(in_port_t _port, int priority, int _refreshTimeout) : 
-    nextMessageID(0),
     refreshTimeout(_refreshTimeout), 
     messageQueue(priority), 
     table(), 
@@ -130,10 +126,12 @@ void Broker::server() {
           close(connfd);
           continue;
         }
+        ::send(connfd, "sdd", 3, 0);
         int UserID = nextUserID++;
         socketTable[UserID] = Client(UserID, connfd);
-        //test 
-        if (UserID >= 3) {
+        //test
+        printf("new UserID = %d\n", UserID); 
+        if (UserID >= 1) {
           printf("%d subscribed: ", UserID);
           for (int i = 0; i < 10; ++i) {
             if (rand() % 3 == 1) {
@@ -149,12 +147,9 @@ void Broker::server() {
         printf("connection from %s, port %d\n", buff, port);
       } 
       else if (events[n].events & EPOLLIN) {
-        char buffer[MAX_LEN + 1]; 
-        int connfd = events[n].data.fd, res;
-        if (res = network::read(connfd, buffer)) {
-          messageQueue.push(getMessage(buffer));
-          printf("received %d bytes\n", res);
-        }
+        int client_sockfd = events[n].data.fd;
+        std::thread reader(&Broker::work, this, client_sockfd);
+        reader.detach();
       }
       else if (events[n].events & EPOLLOUT) {
         
@@ -163,15 +158,14 @@ void Broker::server() {
   }
 }
 
-/*
 void Broker::work(int client_sockfd) {
-  int len;
-  char buf[BUFSIZ];
-  while ((len = recv(client_sockfd, buf, BUFSIZ, 0)) > 0) {
-    buf[len] = '\0';
-    messageQueue.push(getMessage(buf));
+  char buffer[MAX_LEN + 1]; 
+  int res;
+  if (res = network::read(client_sockfd, buffer)) {
+    messageQueue.push(getMessage(buffer));
+    printf("received %d bytes\n", res);
   }
-}*/
+}
 
 std::shared_ptr<Message> Broker::getMessage(char str[]) {
   return std::make_shared<Message>(Message(0, rand() % 10, str, nextMessageID++));
@@ -182,10 +176,8 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
   for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
     int clientID = socketTable[UserID.first].socketID;
     if (socketTable[UserID.first].que.empty()) {
-      if (send(clientID, message->message.c_str(), message->message.size(), 0) < 0) {
-        perror("write error");
-        return;
-      }
+      int res;
+      network::send(clientID, message->message.c_str(), message->message.size());
     }
     else {
       socketTable[UserID.first].que.push(message->id);
