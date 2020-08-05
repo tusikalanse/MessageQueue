@@ -38,8 +38,8 @@
 *.app
 */MQ
 
-# Test files
-*test*
+# # Test files
+# *test*
 
 ### vscode ###
 .vscode/*
