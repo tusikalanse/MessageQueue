@@ -38,7 +38,7 @@ int network::read(int sockfd, char* buf) {
     else {
       buf[ret] = '\0';
       res += ret;
-      printf("%d %d: %s\n", ret, strlen(buf), buf);
+      //printf("%d %d: %s\n", ret, strlen(buf), buf);
       //test 
       // puts("sending back");
       // ::send(sockfd, buf, strlen(buf), 0);

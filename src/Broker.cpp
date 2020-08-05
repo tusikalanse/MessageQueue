@@ -48,17 +48,21 @@ void Broker::run() {
 
   while (1) {
     if (messageQueue.empty()) {
-      //sleep(1);
-      //std::cout << "empty message queue" << std::endl;
+      // sleep(1);
+      // std::cout << "empty message queue" << std::endl;
+      // std::cout << "nextMessageID is " << nextMessageID << std::endl;
       continue;
     }
     //std::cout << "message queue size is " << messageQueue.size() << std::endl;
-    std::cout << "nextMessageID is " << nextMessageID << std::endl;
+    //std::cout << "nextMessageID is " << nextMessageID << std::endl;
     std::shared_ptr<Message> message = messageQueue.top();
     messageQueue.pop();
     // TODO : ACK message
     sendMessage(message);
   }
+
+  std::cout << "end main thread" << std::endl;
+
 }
 
 void Broker::server() {
@@ -149,7 +153,7 @@ void Broker::server() {
       else if (events[n].events & EPOLLIN) {
         int client_sockfd = events[n].data.fd;
         std::thread reader(&Broker::work, this, client_sockfd);
-        reader.detach();
+        reader.join();
       }
       else if (events[n].events & EPOLLOUT) {
         
@@ -163,7 +167,7 @@ void Broker::work(int client_sockfd) {
   int res;
   if (res = network::read(client_sockfd, buffer)) {
     messageQueue.push(getMessage(buffer));
-    printf("received %d bytes\n", res);
+    //printf("received %d bytes\n", res);
   }
 }
 
@@ -172,7 +176,7 @@ std::shared_ptr<Message> Broker::getMessage(char str[]) {
 }
 
 void Broker::sendMessage(std::shared_ptr<Message> message) {
-  printf("sending message topic is %d\n", message->topic);
+  //printf("sending message topic is %d\n", message->topic);
   for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
     int clientID = socketTable[UserID.first].socketID;
     if (socketTable[UserID.first].que.empty()) {
@@ -186,10 +190,11 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
 }
 
 void Broker::resendAll() {
-  for(;;) {
+  while (1) {
     sleep(1);
     for (std::pair<const int, Client>& User : socketTable) {
       if (User.second.que.empty()) continue;
+      std::cout << "Resending" << std::endl;
       std::shared_ptr<Message> message = table.getMessage(User.second.que.front());
       if (send(User.second.socketID, message->message.c_str(), message->message.size(), 0) < 0) {
         perror("write error");

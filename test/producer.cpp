@@ -27,7 +27,7 @@ ssize_t socket_send(int sockfd, const char* buffer, size_t buflen) {
 	const char *p = buffer;	
 
 	while(1) {
-		puts("sending");
+		//puts("sending");
 		tmp = send(sockfd, p, total, 0);
 		if(tmp < 0) {
       // 当send收到信号时,可以继续写,但这里返回-1.
@@ -90,21 +90,20 @@ int main(int argc, char *argv[]) {
 	
 
     /*将套接字绑定到服务器的网络地址上*/
-    if(connect(client_sockfd,(struct sockaddr *)&remote_addr,sizeof(struct sockaddr))<0)
-    {
+    if(connect(client_sockfd,(struct sockaddr *)&remote_addr,sizeof(struct sockaddr))<0) {
         perror("connection error");
         return 1;
     }
-setnonblocking(client_sockfd);
+    setnonblocking(client_sockfd);
     printf("connected to server\n");
     //len=recv(client_sockfd,buf,BUFSIZ,0);//接收服务器端信息
     //    buf[len]='\0';
     //printf("%s",buf); //打印服务器端信息
-    sleep(2);
+    //sleep(20);
     /*循环的发送接收信息并打印接收信息（可以按需发送）--recv返回接收到的字节数，send返回发送的字节数*/
     for (int i = 1; i <= 100000; ++i)
     {
-        printf("Enter string to send:");
+        //printf("Enter string to send:");
         //scanf("%s",buf);
         len = rand() % 100 + 10;
         for (int i = 0; i < len; ++i)
@@ -118,7 +117,7 @@ setnonblocking(client_sockfd);
         //len=recv(client_sockfd,buf,BUFSIZ,0);
        //buf[len]='\0';
         //printf("received:%s\n",buf);
-	fflush(stdout);
+	//fflush(stdout);
     }
     cout << "end" << endl;
     /*关闭套接字*/

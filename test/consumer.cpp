@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
                     if (ret == 0) {
                         isClientwork = 0;
                     } else {   // 将信息发送给服务端
-                        puts("sending data");
+                        //puts("sending data");
                         send(clientfd, message, strlen(message), 0);
                     }
                 }

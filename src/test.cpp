@@ -231,6 +231,7 @@
 int main() {
   Broker server(8000);
   server.run();
+  std::cout << "end" << std::endl;
   // int listenfd;
   // struct sockaddr_in servaddr;
   // short port = 8000;
