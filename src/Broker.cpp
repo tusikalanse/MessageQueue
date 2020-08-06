@@ -47,16 +47,20 @@ void Broker::run() {
   ticker.detach();
 
   while (1) {
-    if (messageQueue.empty()) {
-      // sleep(1);
-      // std::cout << "empty message queue" << std::endl;
-      // std::cout << "nextMessageID is " << nextMessageID << std::endl;
-      continue;
-    }
-    //std::cout << "message queue size is " << messageQueue.size() << std::endl;
-    //std::cout << "nextMessageID is " << nextMessageID << std::endl;
+    std::unique_lock<std::mutex> lock(mutex_queue);
+    while (messageQueue.empty()) 
+      queue_isnot_empty.wait(lock);
+    // if (messageQueue.empty()) {
+    //   // sleep(1);
+    //   // std::cout << "empty message queue" << std::endl;
+    //   // std::cout << "nextMessageID is " << nextMessageID << std::endl;
+    //   continue;
+    // }
+    std::cout << "message queue size is " << messageQueue.size() << std::endl;
+    std::cout << "nextMessageID is " << nextMessageID << std::endl;
     std::shared_ptr<Message> message = messageQueue.top();
     messageQueue.pop();
+    lock.unlock();
     // TODO : ACK message
     sendMessage(message);
   }
@@ -77,6 +81,9 @@ void Broker::server() {
     perror("socket error");
     return;
   }
+
+  int opt = 1;
+  setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&opt, sizeof(opt));
 
   if (bind(server_sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
     perror("bind error");
@@ -123,16 +130,17 @@ void Broker::server() {
           continue;
         }
         network::setnonblocking(connfd);
-        ev.events = EPOLLIN | EPOLLET | EPOLLOUT;
+        ev.events = EPOLLIN | EPOLLET;
         ev.data.fd = connfd;
         if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, connfd, &ev)) {
           perror("epoll_ctl EPOLL_CTL_ADD fail");
           close(connfd);
           continue;
         }
-        ::send(connfd, "sdd", 3, 0);
         int UserID = nextUserID++;
+        std::unique_lock<std::mutex> lock(mutex_socketTable);
         socketTable[UserID] = Client(UserID, connfd);
+        lock.unlock();
         //test
         printf("new UserID = %d\n", UserID); 
         if (UserID >= 1) {
@@ -166,7 +174,11 @@ void Broker::work(int client_sockfd) {
   char buffer[MAX_LEN + 1]; 
   int res;
   if (res = network::read(client_sockfd, buffer)) {
-    messageQueue.push(getMessage(buffer));
+    std::shared_ptr<Message> message = getMessage(buffer);
+    std::unique_lock<std::mutex> lock(mutex_queue);    
+    messageQueue.push(message);
+    lock.unlock();
+    queue_isnot_empty.notify_one();
     //printf("received %d bytes\n", res);
   }
 }
@@ -178,6 +190,7 @@ std::shared_ptr<Message> Broker::getMessage(char str[]) {
 void Broker::sendMessage(std::shared_ptr<Message> message) {
   //printf("sending message topic is %d\n", message->topic);
   for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
+    std::unique_lock<std::mutex> lock(mutex_socketTable);
     int clientID = socketTable[UserID.first].socketID;
     if (socketTable[UserID.first].que.empty()) {
       int res;
@@ -192,6 +205,7 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
 void Broker::resendAll() {
   while (1) {
     sleep(1);
+    std::unique_lock<std::mutex> lock(mutex_socketTable);
     for (std::pair<const int, Client>& User : socketTable) {
       if (User.second.que.empty()) continue;
       std::cout << "Resending" << std::endl;

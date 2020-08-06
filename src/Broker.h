@@ -1,7 +1,9 @@
 #ifndef BROKER_H
 #define BROKER_H
 
+#include <condition_variable>
 #include <cstdio>
+#include <mutex>
 #include <queue>
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -27,6 +29,9 @@ class Broker {
   void sendMessage(std::shared_ptr<Message> message);
   void resendAll();
  private:
+  std::mutex mutex_queue;
+  std::mutex mutex_socketTable;
+  std::condition_variable queue_isnot_empty;
   static const int MAX_EVENTS = 1000;
   static const int MAX_LEN = 1024;
   int nextUserID = 0;
