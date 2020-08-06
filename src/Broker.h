@@ -30,10 +30,15 @@ class Broker {
   void resendAll();
  private:
   std::mutex mutex_queue;
+  std::mutex mutex_IDTable;
   std::mutex mutex_socketTable;
+  std::mutex mutex_subscription;
+  std::mutex mutex_messageTable;
   std::condition_variable queue_isnot_empty;
   static const int MAX_EVENTS = 1000;
   static const int MAX_LEN = 1024;
+  //test
+  int out = 0;
   int nextUserID = 0;
   int nextMessageID = 0;
   const in_port_t port;
