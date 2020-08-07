@@ -43,8 +43,8 @@ int network::read(Client& client) {
       buf[ret] = '\0';
       res += ret;
       //HTTPParser(client);
-      printf("%d %d: %s\n", ret, strlen(buf), buf);
-      fflush(stdout);
+      //printf("%d %d: %s\n", ret, strlen(buf), buf);
+      //fflush(stdout);
     }
   }
   return res;
@@ -108,7 +108,7 @@ void network::HTTPParser(Client& client) {
       else if (client.buf[IDX + 1] == 'O')
         dealPost(client.buf + IDX, temp + 4, length);
       else if (client.buf[IDX + 1] == 'U')
-        dealPut(client.buf + IDX, temp + 4, length);
+        dealPut(client.UserID, client.buf + IDX, temp + 4, length);
       else
         if (IDX != n) std::cerr << "Bad Request" << std::endl;
       IDX = temp - client.buf + length + 4;
@@ -116,6 +116,32 @@ void network::HTTPParser(Client& client) {
   }
   if (IDX != n) std::cerr << "error IDX != n" << std::endl;
   client.readIDX = 0;
+}
+
+int network::dealGet(const char* buf, int len) {
+  //todo
+}
+
+
+int network::dealPost(const char* buf, const char* body, int len) {
+  //todo
+}
+
+int network::dealPut(int UserID, const char* buf, const char* body, int len) {
+  //url: .../ACK
+  //body: messageID=$ID
+  const char* temp = strchr(buf, ' ');
+  if (strstr(temp, "ACK") != temp + 1) return 400;
+  if (strstr(body, "messageID=") != body) return 400;
+  temp = strchr(body, '=') + 1;
+  int id = atoi(temp);
+  
+
+
+}
+
+int network::dealDelelte(const char* buf, const char* body, int len) {
+  //todo
 }
 
 int network::findIndex(const char* buf) {
