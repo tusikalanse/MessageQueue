@@ -5,6 +5,7 @@
 #include <cstring>
 #include <errno.h>
 #include <fcntl.h>
+#include <iostream>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -41,8 +42,9 @@ int network::read(Client& client) {
     else {
       buf[ret] = '\0';
       res += ret;
-      //printf("%d %d: %s\n", ret, strlen(buf), buf);
-      //fflush(stdout);
+      //HTTPParser(client);
+      printf("%d %d: %s\n", ret, strlen(buf), buf);
+      fflush(stdout);
     }
   }
   return res;
@@ -66,5 +68,75 @@ int network::send(Client& client, const char* buf, int len) {
 }
 
 void network::HTTPParser(Client& client) {
+  int n = strlen(client.buf), IDX = 0;
+  if (findIndex(client.buf) != 0) {
+    std::cerr << "error" << std::endl;
+  }
+  while (IDX < n) {
+    if (client.buf[IDX] == 'G') {
+      const char* temp = strstr(client.buf + IDX, "\r\n\r\n");
+      if (temp == NULL) {
+        strncpy(client.buf, client.buf + IDX, n - IDX);
+        client.readIDX = n - IDX;
+        return;
+      }
+      dealGet(client.buf + IDX, temp - client.buf + 4 - IDX);
+      IDX = temp - client.buf + 4;
+    }
+    else {
+      const char* temp = strstr(client.buf + IDX, "Content-Length:");
+      if (temp == NULL) {
+        strncpy(client.buf, client.buf + IDX, n - IDX);
+        client.readIDX = n - IDX;
+        return;
+      }
+      int length = 0;
+      char ch = *temp;
+      while (ch < '0' || ch > '9') ch = *++temp;
+      while (ch >= '0' && ch <= '9') {
+        length = length * 10 + ch - '0';
+        ch = *++temp;
+      }
+      temp = strstr(temp, "\r\n\r\n");
+      if (temp == NULL || temp + 4 + length > client.buf + n) {
+        strncpy(client.buf, client.buf + IDX, n - IDX);
+        client.readIDX = n - IDX;
+        return;
+      }
+      if (client.buf[IDX] == 'D') 
+        dealDelelte(client.buf + IDX, temp + 4, length);
+      else if (client.buf[IDX + 1] == 'O')
+        dealPost(client.buf + IDX, temp + 4, length);
+      else if (client.buf[IDX + 1] == 'U')
+        dealPut(client.buf + IDX, temp + 4, length);
+      else
+        if (IDX != n) std::cerr << "Bad Request" << std::endl;
+      IDX = temp - client.buf + length + 4;
+    }
+  }
+  if (IDX != n) std::cerr << "error IDX != n" << std::endl;
+  client.readIDX = 0;
+}
 
+int network::findIndex(const char* buf) {
+  const char* result;
+  int res = 1e9;
+  result = strstr(buf, "GET");
+  if (result != NULL && result - buf < res) {
+    res = result - buf;
+  }
+  result = strstr(buf, "POST");
+  if (result != NULL && result - buf < res) {
+    res = result - buf;
+  }
+  result = strstr(buf, "PUT");
+  if (result != NULL && result - buf < res) {
+    res = result - buf;
+  }
+  result = strstr(buf, "DELETE");
+  if (result != NULL && result - buf < res) {
+    res = result - buf;
+  }
+  if (res == 1e9) return -1;
+  return res;
 }

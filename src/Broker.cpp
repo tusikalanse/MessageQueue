@@ -197,6 +197,7 @@ void Broker::work(int client_sockfd) {
     lock.unlock();
     queue_isnot_empty.notify_one();
     //printf("received %d bytes\n", res);
+    //::send(client_sockfd, "HTTP/1.1 200 OK\r\nContent-Length: 25\r\n\r\n<html>Hello World!</html>", 64, 0);
   }
   std::cout << "read end" << std::endl;
 }
