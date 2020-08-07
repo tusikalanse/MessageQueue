@@ -19,7 +19,7 @@ __gnu_pbds::cc_hash_table<int, bool> Subscription::getUsers(const int topic) {
   return subscription[topic];
 }
 
-int Subscription::getSubscribers(const int topic) {
+int Subscription::countSubscribers(const int topic) {
   if (subscription.find(topic) == subscription.end())
     return 0;
   return subscription[topic].size();
