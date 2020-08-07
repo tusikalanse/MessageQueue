@@ -145,6 +145,9 @@ void Broker::server() {
         std::unique_lock<std::mutex> lock(mutex_socketTable);
         socketTable[UserID] = Client(UserID, connfd);
         lock.unlock();
+        std::unique_lock<std::mutex> locker(mutex_IDTable);
+        IDTable[connfd] = UserID;
+        locker.unlock();
         //test
         printf("new UserID = %d\n", UserID); 
         if (UserID >= 1) {
@@ -180,7 +183,13 @@ void Broker::work(int client_sockfd) {
   char buffer[MAX_LEN + 1]; 
   int res;
   std::cout << "readdding" << std::endl;
-  if (res = network::read(client_sockfd, buffer)) {
+  std::unique_lock<std::mutex> lock(mutex_IDTable);
+  int UserID = IDTable[client_sockfd];
+  lock.unlock();
+  std::unique_lock<std::mutex> locker(mutex_socketTable);
+  Client& client = socketTable[UserID];
+  locker.unlock();
+  if (res = network::read(client)) {
     std::cout << "inner reading" << std::endl;
     std::shared_ptr<Message> message = getMessage(buffer);
     std::unique_lock<std::mutex> lock(mutex_queue);    
@@ -205,7 +214,13 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
     int clientID = socketTable[UserID.first].socketID;
     if (socketTable[UserID.first].que.empty()) {
       int res;
-      network::send(clientID, message->message.c_str(), message->message.size());
+      std::unique_lock<std::mutex> lock(mutex_IDTable);
+      int UserID = IDTable[clientID];
+      lock.unlock();
+      std::unique_lock<std::mutex> locker(mutex_socketTable);
+      Client& client = socketTable[UserID];
+      locker.unlock();
+      network::send(client, message->message.c_str(), message->message.size());
     }
     else {
       socketTable[UserID.first].que.push(message->id);
@@ -223,7 +238,7 @@ void Broker::resendAll() {
       std::unique_lock<std::mutex> lock(mutex_messageTable);
       std::shared_ptr<Message> message = table.getMessage(User.second.que.front());
       lock.unlock();
-      if (network::send(User.second.socketID, message->message.c_str(), message->message.size()) < 0) {
+      if (network::send(User.second, message->message.c_str(), message->message.size()) < 0) {
         perror("write error");
         return;
       }

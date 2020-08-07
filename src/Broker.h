@@ -45,7 +45,7 @@ class Broker {
   const int refreshTimeout;
   MyMessageQueue messageQueue;
   __gnu_pbds::gp_hash_table<int, Client> socketTable;
-  __gnu_pbds::gp_hash_table<int, int> IDTable;
+  __gnu_pbds::gp_hash_table<int, int> IDTable; //<sockfd, userid>
   MessageTable table; 
   Subscription subscription;
 };

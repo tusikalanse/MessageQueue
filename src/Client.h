@@ -9,8 +9,8 @@ struct Client {
   int socketID;
   char buf[BUFSIZ];
   int readIDX = 0;
-  int checkIDX = 0;
-  int writeIDX = 0;
+  // int checkIDX = 0;
+  // int writeIDX = 0;
   std::queue<int> que;
   Client() = default;
   Client(int _userID, int _socketID) : UserID(_userID), socketID(_socketID) {}
