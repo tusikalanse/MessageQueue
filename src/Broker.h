@@ -29,6 +29,17 @@ class Broker {
   void sendMessage(std::shared_ptr<Message> message);
   void resendAll();
  private:
+  static void setnonblocking(int sockfd);
+  int read(Client& client);
+  int send(Client& client, const char* buf, int len);
+  //void setOutput(int sockfd, bool enableOutput);
+  void HTTPParser(Client& client);
+  int dealGet(const char* buf, int len);
+  int dealPost(const char* buf, const char* body, int len);
+  int dealPut(int UserID, const char* buf, const char* body, int len);
+  int dealDelelte(const char* buf, const char* body, int len);
+  int findIndex(const char* buf); 
+  //static const char API[] = "HTTP/1.1 200 OK\r\nContent-Length: 25\r\n\r\n{\t\"post su\"}</html>";
   std::mutex mutex_queue;
   std::mutex mutex_IDTable;
   std::mutex mutex_socketTable;

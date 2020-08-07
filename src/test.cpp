@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include "Broker.h"
-#include "network.h"
 
 #define MAX_EVENTS 1000
 #define MAX_LEN 1024
