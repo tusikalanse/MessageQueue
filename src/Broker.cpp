@@ -153,7 +153,7 @@ void Broker::server() {
             if (rand() % 3 == 1) {
               printf(" %d", i);
               std::unique_lock<std::mutex> lock(mutex_subscription);
-              subscription.addSubscription(i , UserID);
+              //subscription.addSubscription(i , UserID);
             }
           }
           puts("");
