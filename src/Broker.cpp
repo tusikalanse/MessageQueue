@@ -12,6 +12,7 @@ Broker::Broker() :
     messageQueue(), 
     table(), 
     port(8000),
+    priorityNumber(0),
     subscription()
   {}
 
@@ -20,6 +21,7 @@ Broker::Broker(in_port_t _port) :
     messageQueue(), 
     table(), 
     port(_port),
+    priorityNumber(0),
     subscription()
   {}
 
@@ -28,6 +30,7 @@ Broker::Broker(in_port_t _port, int priority) :
     messageQueue(priority), 
     table(), 
     port(_port),
+    priorityNumber(priority <= 1 ? 0 : priority),
     subscription()
   {}
 
@@ -36,6 +39,7 @@ Broker::Broker(in_port_t _port, int priority, int _refreshTimeout) :
     messageQueue(priority), 
     table(), 
     port(_port), 
+    priorityNumber(priority <= 1 ? 0 : priority),
     subscription() 
   {}
 
@@ -62,7 +66,6 @@ void Broker::run() {
     messageQueue.pop();
     ++out;
     lock.unlock();
-    // TODO : ACK message
     std::cout << "out cnt " << out << std::endl;
     sendMessage(message);
   }
@@ -180,7 +183,8 @@ void Broker::server() {
 
 void Broker::work(int client_sockfd) {
   std::cout << "reading" << std::endl;
-  char buffer[MAX_LEN + 1]; 
+  //todo
+  //char buffer[MAX_LEN + 1]; 
   int res;
   std::cout << "readdding" << std::endl;
   std::unique_lock<std::mutex> lock(mutex_IDTable);
@@ -191,11 +195,14 @@ void Broker::work(int client_sockfd) {
   locker.unlock();
   if (res = read(client)) {
     std::cout << "inner reading" << std::endl;
-    std::shared_ptr<Message> message = getMessage(buffer);
-    std::unique_lock<std::mutex> lock(mutex_queue);    
-    messageQueue.push(message);
-    lock.unlock();
-    queue_isnot_empty.notify_one();
+    //std::shared_ptr<Message> message = getMessage(buffer);
+    // std::unique_lock<std::mutex> lock(mutex_queue);    
+    // messageQueue.push(message);
+    // lock.unlock();
+    // std::unique_lock<std::mutex> locker(mutex_messageTable);
+    // table.addMessage(message->id, make_pair(message, 0));
+    // locker.unlock();    
+    // queue_isnot_empty.notify_one();
     //printf("received %d bytes\n", res);
     //::send(client_sockfd, "HTTP/1.1 200 OK\r\nContent-Length: 25\r\n\r\n<html>Hello World!</html>", 64, 0);
   }
@@ -209,29 +216,27 @@ std::shared_ptr<Message> Broker::getMessage(char str[]) {
 void Broker::sendMessage(std::shared_ptr<Message> message) {
   printf("sending message topic is %d\n", message->topic);
   fflush(stdout);
-  std::unique_lock<std::mutex> lock(mutex_socketTable);
   std::unique_lock<std::mutex> locker(mutex_subscription);
+  int num = subscription.getUsers(message->topic).size();
+  std::unique_lock<std::mutex> locker3(mutex_messageTable);
+  table.addMessage(message->id, make_pair(message, num));
+  locker3.unlock();    
+  std::unique_lock<std::mutex> lock(mutex_socketTable);
   for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
-    int clientID = socketTable[UserID.first].socketID;
-    if (socketTable[UserID.first].que.empty()) {
-      int res;
-      std::unique_lock<std::mutex> lock(mutex_IDTable);
-      int UserID = IDTable[clientID];
-      lock.unlock();
-      std::unique_lock<std::mutex> locker(mutex_socketTable);
-      Client& client = socketTable[UserID];
+    //int clientID = socketTable[UserID.first].socketID;
+    std::unique_lock<std::mutex> locker(mutex_socketTable);
+    socketTable[UserID.first].que.push(message->id);
+    if (socketTable[UserID.first].que.size() == 1) {
+      Client& client = socketTable[UserID.first];
       locker.unlock();
       send(client, message->message.c_str(), message->message.size());
-    }
-    else {
-      socketTable[UserID.first].que.push(message->id);
     }
   }
 }
 
 void Broker::resendAll() {
   while (1) {
-    sleep(1);
+    sleep(refreshTimeout);
     std::unique_lock<std::mutex> lock(mutex_socketTable);
     for (std::pair<const int, Client>& User : socketTable) {
       if (User.second.que.empty()) continue;
@@ -278,7 +283,7 @@ int Broker::read(Client& client) {
     else {
       buf[ret] = '\0';
       res += ret;
-      //HTTPParser(client);
+      //todo: HTTPParser(client);
       //printf("%d %d: %s\n", ret, strlen(buf), buf);
       //fflush(stdout);
     }
@@ -340,11 +345,11 @@ void Broker::HTTPParser(Client& client) {
         return;
       }
       if (client.buf[IDX] == 'D') 
-        dealDelelte(client.buf + IDX, temp + 4, length);
+        dealDelete(client, client.buf + IDX, temp + 4, length);
       else if (client.buf[IDX + 1] == 'O')
-        dealPost(client.buf + IDX, temp + 4, length);
+        dealPost(client, client.buf + IDX, temp + 4, length);
       else if (client.buf[IDX + 1] == 'U')
-        dealPut(client.UserID, client.buf + IDX, temp + 4, length);
+        dealPut(client, client.buf + IDX, temp + 4, length);
       else
         if (IDX != n) std::cerr << "Bad Request" << std::endl;
       IDX = temp - client.buf + length + 4;
@@ -359,11 +364,49 @@ int Broker::dealGet(const char* buf, int len) {
 }
 
 
-int Broker::dealPost(const char* buf, const char* body, int len) {
-  //todo
+int Broker::dealPost(Client& client, const char* buf, const char* body, int len) {
+  //url: .../subscription
+  //body: topic=$topic
+  //url: .../message
+  //body: message=$message&topic=$topic(&priority=$priority)
+  const char* temp = strchr(buf, ' ');
+  if (strstr(temp, "subscription") == temp + 1) {
+    if (strstr(body, "topic=") != body) return 400;
+    temp = strchr(body, '=') + 1;
+    int id = atoi(temp);
+    std::unique_lock<std::mutex> lock(mutex_subscription);
+    subscription.addSubscription(id, client.UserID);
+    return 200;
+  }
+  else if (strstr(temp, "message") == temp + 1) {
+    if (strstr(body, "message=") != body) return 400;
+    if (strstr(body, "&topic=") == NULL) return 400;
+    if (priorityNumber != 0) {
+      if (strstr(body, "&priority=") == NULL) return 400;
+      temp = strstr(body, "&priority=") + 10;
+      int priority = atoi(temp);
+      if (priority <= 1) priority = 1;
+      if (priority > priorityNumber) return 400;
+      temp = strstr(body, "&topic=") + 7;
+      int topic = atoi(temp);
+      std::string str(body, temp - body - 7);
+      std::unique_lock<std::mutex> lock(mutex_queue);
+      messageQueue.push(std::make_shared<Message>(PriorityMessage(client.UserID, topic, str, nextMessageID++, priority)));
+    }
+    else {
+      temp = strstr(body, "&topic=") + 7;
+      int topic = atoi(temp);
+      std::string str(body, temp - body - 7);
+      std::unique_lock<std::mutex> lock(mutex_queue);
+      messageQueue.push(std::make_shared<Message>(Message(client.UserID, topic, str, nextMessageID++)));
+    }
+    return 200;
+  }
+  else
+    return 400;
 }
 
-int Broker::dealPut(int UserID, const char* buf, const char* body, int len) {
+int Broker::dealPut(Client& client, const char* buf, const char* body, int len) {
   //url: .../ACK
   //body: messageID=$ID
   const char* temp = strchr(buf, ' ');
@@ -371,13 +414,34 @@ int Broker::dealPut(int UserID, const char* buf, const char* body, int len) {
   if (strstr(body, "messageID=") != body) return 400;
   temp = strchr(body, '=') + 1;
   int id = atoi(temp);
-  
-
-
+  if (!client.que.empty() && id == client.que.front()) {
+    std::unique_lock<std::mutex> lock(mutex_socketTable);
+    client.que.pop();
+    lock.unlock();
+    std::unique_lock<std::mutex> locker(mutex_messageTable);
+    table.ACK(id);
+    locker.unlock();
+    if (!client.que.empty()) {
+      std::unique_lock<std::mutex> locker(mutex_messageTable);
+      std::shared_ptr<Message> message = table.getMessage(client.que.front());
+      locker.unlock();
+      send(client, message->message.c_str(), message->message.size());
+    }
+  }
+  return 200;
 }
 
-int Broker::dealDelelte(const char* buf, const char* body, int len) {
-  //todo
+int Broker::dealDelete(Client& client, const char* buf, const char* body, int len) {
+  //url: .../subscription
+  //body: topic=$topic
+  const char* temp = strchr(buf, ' ');
+  if (strstr(temp, "subscription") != temp + 1) return 400;
+  if (strstr(body, "topic=") != body) return 400;
+  temp = strchr(body, '=') + 1;
+  int id = atoi(temp);
+  std::unique_lock<std::mutex> lock(mutex_subscription);
+  subscription.removeSubscription(id, client.UserID);
+  return 200;
 }
 
 int Broker::findIndex(const char* buf) {

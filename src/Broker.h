@@ -14,6 +14,7 @@
 #include "Client.h"
 #include "MessageTable.h"
 #include "MyMessageQueue.h"
+#include "PriorityMessage.h"
 #include "Subscription.h"
 
 class Broker {
@@ -35,9 +36,9 @@ class Broker {
   //void setOutput(int sockfd, bool enableOutput);
   void HTTPParser(Client& client);
   int dealGet(const char* buf, int len);
-  int dealPost(const char* buf, const char* body, int len);
-  int dealPut(int UserID, const char* buf, const char* body, int len);
-  int dealDelelte(const char* buf, const char* body, int len);
+  int dealPost(Client& client, const char* buf, const char* body, int len);
+  int dealPut(Client& client, const char* buf, const char* body, int len);
+  int dealDelete(Client& client, const char* buf, const char* body, int len);
   int findIndex(const char* buf); 
   //static const char API[] = "HTTP/1.1 200 OK\r\nContent-Length: 25\r\n\r\n{\t\"post su\"}</html>";
   std::mutex mutex_queue;
@@ -50,6 +51,7 @@ class Broker {
   static const int MAX_LEN = 1024;
   //test
   int out = 0;
+  int priorityNumber;
   int nextUserID = 0;
   int nextMessageID = 0;
   const in_port_t port;
