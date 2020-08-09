@@ -13,12 +13,9 @@
 #include <string.h>
 using namespace std;
 
-
-list<int> clients_list;
-
 /***** macro defintion *****/
 //server ip
-#define SERVER_IP "9.134.237.210"
+#define SERVER_IP "129.211.56.193"
 
 //server port
 #define SERVER_PORT 8000
@@ -67,40 +64,6 @@ void addfd(int epollfd, int fd, bool enable_et) {
     epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &ev);
     setnonblockint(fd);
     printf("fd added to epoll!\n\n");
-}
-
-//发送广播
-int sendBroadcastmessage(int clientfd) {
-    char buf[BUF_SIZE];
-    char message[BUF_SIZE];
-    bzero(buf, BUF_SIZE);
-    bzero(buf, BUF_SIZE);
-
-    printf("read from client(clientID = %d)\n", clientfd);
-    int len = recv(clientfd, buf, BUF_SIZE, 0);
-
-    if (0 == len) {
-        close(clientfd);
-        clients_list.remove(clientfd);
-        printf("ClientID = %d closed.\n now there are %d client in the char room\n",
-        clientfd, (int)clients_list.size());
-    } else {
-        if (1 == clients_list.size()) {
-            send(clientfd, CAUTION, strlen(CAUTION), 0);
-            return 0;
-        }
-        sprintf(message, SERVER_MESSAGE, clientfd, buf);
-        list<int>::iterator it;
-        for (it = clients_list.begin(); it != clients_list.end(); ++it) {
-            if (*it != clientfd) {
-                if (send(*it, message, BUF_SIZE, 0) < 0) {
-                    perror("error");
-                    exit(-1);
-                }
-            }
-        }
-    }
-    return len;
 }
 
 #define error(msg) \
@@ -158,6 +121,7 @@ int main(int argc, char *argv[]) {
 
     // 聊天信息缓冲区
     char message[BUF_SIZE];
+    char httpmessage[BUF_SIZE];
 
     // Fork
     int pid = fork();
@@ -171,16 +135,24 @@ int main(int argc, char *argv[]) {
         while (isClientwork) {
             bzero(&message, BUF_SIZE);
             fgets(message, BUF_SIZE, stdin);
-
             // 客户输出exit,退出
             if (strncasecmp(message, EXIT, strlen(EXIT)) == 0) {
                 isClientwork = 0;
             } else {    // 子进程将信息写入管道
                 message[strlen(message) - 1] = '\0';
-                if (write(pipefd[1], message, strlen(message)) < 0) {
+                if (message[0] == 'm') {
+                    printf("sending new message\n");
+                    sprintf(httpmessage, "POST /message HTTP/1.1\r\nHost: 129.211.56.193:8000\r\nContent-Length: %d\r\n\r\nmessage=%s&topic=%d\r\n", strlen(message) + 16, message, rand() % 10);
+                }
+                else {
+                    printf("sending ndddew message\n");
+                    sprintf(httpmessage, "POST /message HTTP/1.1\r\nHost: 129.211.56.193:8000\r\nContent-Length: %d\r\n\r\n%s\r\n", strlen(message), message);
+                }
+                if (write(pipefd[1], httpmessage, strlen(httpmessage)) < 0) {
                     error("fork error");
                 }
                 puts("writing");
+                fflush(stdout);
             }
         }
     } else { //pid > 0 父进程

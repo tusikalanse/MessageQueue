@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     char buf[BUFSIZ];  //数据传送的缓冲区
     memset(&remote_addr,0,sizeof(remote_addr)); //数据初始化--清零
     remote_addr.sin_family=AF_INET; //设置为IP通信
-    remote_addr.sin_addr.s_addr=inet_addr("9.134.237.210");//服务器IP地址
+    remote_addr.sin_addr.s_addr=inet_addr("129.211.56.193");//服务器IP地址
     remote_addr.sin_port=htons(8000); //服务器端口号
     
     /*创建客户端套接字--IPv4协议，面向连接通信，TCP协议*/
