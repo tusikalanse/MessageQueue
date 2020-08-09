@@ -153,17 +153,17 @@ void Broker::server() {
         locker.unlock();
         //test
         printf("new UserID = %d\n", UserID); 
-        if (UserID >= 1) {
-          printf("%d subscribed: ", UserID);
-          for (int i = 0; i < 10; ++i) {
-            if (rand() % 3 == 1) {
-              printf(" %d", i);
-              std::unique_lock<std::mutex> lock(mutex_subscription);
-              //subscription.addSubscription(i , UserID);
-            }
-          }
-          puts("");
-        }
+        // if (UserID >= 1) {
+        //   printf("%d subscribed: ", UserID);
+        //   for (int i = 0; i < 10; ++i) {
+        //     if (rand() % 3 == 1) {
+        //       printf(" %d", i);
+        //       std::unique_lock<std::mutex> lock(mutex_subscription);
+        //       //subscription.addSubscription(i , UserID);
+        //     }
+        //   }
+        //   puts("");
+        // }
         char buff[INET_ADDRSTRLEN + 1] = {0};
         inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
         uint16_t port = ntohs(cliaddr.sin_port);
@@ -283,7 +283,7 @@ int Broker::read(Client& client) {
     else {
       buf[ret] = '\0';
       res += ret;
-      //todo: HTTPParser(client);
+      HTTPParser(client);
       //printf("%d %d: %s\n", ret, strlen(buf), buf);
       //fflush(stdout);
     }
@@ -311,9 +311,13 @@ int Broker::send(Client& client, const char* buf, int len) {
 void Broker::HTTPParser(Client& client) {
   int n = strlen(client.buf), IDX = 0;
   if (findIndex(client.buf) != 0) {
-    std::cerr << "error" << std::endl;
+    std::cerr << "error" << 
+    std::endl;
   }
   while (IDX < n) {
+    while (IDX < n && (client.buf[IDX] == '\n' || client.buf[IDX] == '\r')) IDX++;
+    std::cout << "IDX = " << IDX << std::endl;
+    std::cout << client.buf << std::endl;
     if (client.buf[IDX] == 'G') {
       const char* temp = strstr(client.buf + IDX, "\r\n\r\n");
       if (temp == NULL) {
@@ -338,10 +342,14 @@ void Broker::HTTPParser(Client& client) {
         length = length * 10 + ch - '0';
         ch = *++temp;
       }
+      std::cout << "length: " << length << std::endl;
       temp = strstr(temp, "\r\n\r\n");
+      std::cout << temp  - client.buf << " " << length << " " << n << std::endl;
+      std::cout << client.buf[IDX] << " " << client.buf[IDX + 1] << std::endl << std::endl;
       if (temp == NULL || temp + 4 + length > client.buf + n) {
         strncpy(client.buf, client.buf + IDX, n - IDX);
         client.readIDX = n - IDX;
+        std::cout << "regiejfisio" << std::endl;
         return;
       }
       if (client.buf[IDX] == 'D') 
@@ -350,8 +358,8 @@ void Broker::HTTPParser(Client& client) {
         dealPost(client, client.buf + IDX, temp + 4, length);
       else if (client.buf[IDX + 1] == 'U')
         dealPut(client, client.buf + IDX, temp + 4, length);
-      else
-        if (IDX != n) std::cerr << "Bad Request" << std::endl;
+      else if (IDX != n) 
+        std::cerr << "Bad Request" << std::endl;
       IDX = temp - client.buf + length + 4;
     }
   }
@@ -369,16 +377,21 @@ int Broker::dealPost(Client& client, const char* buf, const char* body, int len)
   //body: topic=$topic
   //url: .../message
   //body: message=$message&topic=$topic(&priority=$priority)
-  const char* temp = strchr(buf, ' ');
+  std::cout << "len = " << len << std::endl;
+  const char* temp = strchr(buf, '/');
+  std::cout << temp << " ababababbabababbabababab" << std::endl;
   if (strstr(temp, "subscription") == temp + 1) {
+    std::cout << "Dealing New Subscription" << std::endl;
     if (strstr(body, "topic=") != body) return 400;
     temp = strchr(body, '=') + 1;
     int id = atoi(temp);
     std::unique_lock<std::mutex> lock(mutex_subscription);
     subscription.addSubscription(id, client.UserID);
+    std::cout << client.UserID << " subscribed " << id << std::endl;
     return 200;
   }
   else if (strstr(temp, "message") == temp + 1) {
+    std::cout << "Dealing New Message" << std::endl;
     if (strstr(body, "message=") != body) return 400;
     if (strstr(body, "&topic=") == NULL) return 400;
     if (priorityNumber != 0) {
@@ -389,17 +402,21 @@ int Broker::dealPost(Client& client, const char* buf, const char* body, int len)
       if (priority > priorityNumber) return 400;
       temp = strstr(body, "&topic=") + 7;
       int topic = atoi(temp);
-      std::string str(body, temp - body - 7);
+      std::string str(body + 8, temp - body - 15);
+      std::cout << client.UserID << " say: " << str << std::endl;
       std::unique_lock<std::mutex> lock(mutex_queue);
       messageQueue.push(std::make_shared<Message>(PriorityMessage(client.UserID, topic, str, nextMessageID++, priority)));
     }
     else {
       temp = strstr(body, "&topic=") + 7;
       int topic = atoi(temp);
-      std::string str(body, temp - body - 7);
+      std::string str(body + 8, temp - body - 15);
+      std::cout << client.UserID << " say: " << str << " #########topic = " << topic << std::endl;
       std::unique_lock<std::mutex> lock(mutex_queue);
       messageQueue.push(std::make_shared<Message>(Message(client.UserID, topic, str, nextMessageID++)));
     }
+    queue_isnot_empty.notify_one();
+    std::cout << "New Message" << std::endl;
     return 200;
   }
   else
