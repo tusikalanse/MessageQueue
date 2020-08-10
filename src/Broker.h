@@ -26,7 +26,7 @@ class Broker {
   void run();
   void server();
   void work(int client_sockfd);
-  std::shared_ptr<Message> getMessage(char str[]);
+  //std::shared_ptr<Message> getMessage(char str[]);
   void sendMessage(std::shared_ptr<Message> message);
   void resendAll();
  private:
@@ -40,6 +40,7 @@ class Broker {
   int dealPut(Client& client, const char* buf, const char* body, int len);
   int dealDelete(Client& client, const char* buf, const char* body, int len);
   int findIndex(const char* buf); 
+  void removeClient(int sockfd);
   //static const char API[] = "HTTP/1.1 200 OK\r\nContent-Length: 25\r\n\r\n{\t\"post su\"}</html>";
   std::mutex mutex_queue;
   std::mutex mutex_IDTable;
@@ -50,7 +51,7 @@ class Broker {
   static const int MAX_EVENTS = 1000;
   static const int MAX_LEN = 1024;
   //test
-  int out = 0;
+  int cnt = 0;
   int priorityNumber;
   int nextUserID = 0;
   int nextMessageID = 0;
