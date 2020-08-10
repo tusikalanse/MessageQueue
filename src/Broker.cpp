@@ -233,7 +233,7 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
       Client& client = socketTable[UserID.first];
       locker.unlock();
       std::cout << "sending to " << subscription.getUsers(message->topic).size() << std::endl;
-      send(client, message->message.c_str(), message->message.size());
+      send(client, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->topic)).size());
     }
   }
   std::cout << "end sending" << std::endl;
@@ -249,7 +249,7 @@ void Broker::resendAll() {
       std::unique_lock<std::mutex> lock(mutex_messageTable);
       std::shared_ptr<Message> message = table.getMessage(User.second.que.front());
       lock.unlock();
-      if (send(User.second, message->message.c_str(), message->message.size()) < 0) {
+      if (send(User.second, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->topic)).size()) < 0) {
         perror("write error");
         return;
       }
@@ -322,7 +322,7 @@ void Broker::HTTPParser(Client& client) {
   while (IDX < n) {
     while (IDX < n && (client.buf[IDX] == '\n' || client.buf[IDX] == '\r')) IDX++;
     std::cout << "IDX = " << IDX << std::endl;
-    std::cout << client.buf << std::endl;
+    //std::cout << client.buf << std::endl;
     if (client.buf[IDX] == 'G') {
       const char* temp = strstr(client.buf + IDX, "\r\n\r\n");
       if (temp == NULL) {
@@ -347,10 +347,10 @@ void Broker::HTTPParser(Client& client) {
         length = length * 10 + ch - '0';
         ch = *++temp;
       }
-      std::cout << "length: " << length << std::endl;
+      //std::cout << "length: " << length << std::endl;
       temp = strstr(temp, "\r\n\r\n");
-      std::cout << temp  - client.buf << " " << length << " " << n << std::endl;
-      std::cout << client.buf[IDX] << " " << client.buf[IDX + 1] << std::endl << std::endl;
+      //std::cout << temp  - client.buf << " " << length << " " << n << std::endl;
+      //std::cout << client.buf[IDX] << " " << client.buf[IDX + 1] << std::endl << std::endl;
       if (temp == NULL || temp + 4 + length > client.buf + n) {
         strncpy(client.buf, client.buf + IDX, n - IDX);
         client.readIDX = n - IDX;
@@ -382,9 +382,9 @@ int Broker::dealPost(Client& client, const char* buf, const char* body, int len)
   //body: topic=$topic
   //url: .../message
   //body: message=$message&topic=$topic(&priority=$priority)
-  std::cout << "len = " << len << std::endl;
+  //std::cout << "len = " << len << std::endl;
   const char* temp = strchr(buf, '/');
-  std::cout << temp << " ababababbabababbabababab" << std::endl;
+  //std::cout << temp << " ababababbabababbabababab" << std::endl;
   if (strstr(temp, "subscription") == temp + 1) {
     std::cout << "Dealing New Subscription" << std::endl;
     if (strstr(body, "topic=") != body) return 400;
@@ -431,14 +431,17 @@ int Broker::dealPost(Client& client, const char* buf, const char* body, int len)
 int Broker::dealPut(Client& client, const char* buf, const char* body, int len) {
   //url: .../ACK
   //body: messageID=$ID
-  const char* temp = strchr(buf, ' ');
+  const char* temp = strchr(buf, '/');
+  std::cout << "in function ACK" << std::endl;
   if (strstr(temp, "ACK") != temp + 1) return 400;
   if (strstr(body, "messageID=") != body) return 400;
   temp = strchr(body, '=') + 1;
   int id = atoi(temp);
+  std::cout << "ACK " << id << std::endl;
   if (!client.que.empty() && id == client.que.front()) {
     std::unique_lock<std::mutex> lock(mutex_socketTable);
     client.que.pop();
+    std::cout << "now queue size is " << client.que.size() << std::endl;
     lock.unlock();
     std::unique_lock<std::mutex> locker(mutex_messageTable);
     table.ACK(id);
@@ -447,7 +450,7 @@ int Broker::dealPut(Client& client, const char* buf, const char* body, int len) 
       std::unique_lock<std::mutex> locker(mutex_messageTable);
       std::shared_ptr<Message> message = table.getMessage(client.que.front());
       locker.unlock();
-      send(client, message->message.c_str(), message->message.size());
+      send(client, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->topic)).size());
     }
   }
   return 200;
@@ -456,7 +459,7 @@ int Broker::dealPut(Client& client, const char* buf, const char* body, int len) 
 int Broker::dealDelete(Client& client, const char* buf, const char* body, int len) {
   //url: .../subscription
   //body: topic=$topic
-  const char* temp = strchr(buf, ' ');
+  const char* temp = strchr(buf, '/');
   if (strstr(temp, "subscription") != temp + 1) return 400;
   if (strstr(body, "topic=") != body) return 400;
   temp = strchr(body, '=') + 1;
