@@ -80,7 +80,7 @@ int main() {
     }
     printf("received: %s\nid = %d\n", receive, messageID);
     fflush(stdout);
-    if (rand() % 5 == 1) {
+    if (rand() % 4 == 1) {
       ACK(toACK, messageID);
       socket_send(client_sockfd, toACK, strlen(toACK));
     }
