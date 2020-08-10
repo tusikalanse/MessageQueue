@@ -36,6 +36,7 @@ void subscription() {
 }
 
 int main() {
+  srand(time(NULL));
   int len;
   struct sockaddr_in remote_addr; 
   memset(&remote_addr, 0, sizeof(remote_addr)); 
@@ -79,8 +80,10 @@ int main() {
     }
     printf("received: %s\nid = %d\n", receive, messageID);
     fflush(stdout);
-    ACK(toACK, messageID);
-    socket_send(client_sockfd, toACK, strlen(toACK));
+    if (rand() % 5 == 1) {
+      ACK(toACK, messageID);
+      socket_send(client_sockfd, toACK, strlen(toACK));
+    }
   }
   close(client_sockfd);
   return 0;
