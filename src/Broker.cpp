@@ -221,17 +221,22 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
   std::unique_lock<std::mutex> locker3(mutex_messageTable);
   table.addMessage(message->id, make_pair(message, num));
   locker3.unlock();    
-  std::unique_lock<std::mutex> lock(mutex_socketTable);
+  //std::unique_lock<std::mutex> lock(mutex_socketTable);
+  std::cout << "sending to " << subscription.getUsers(message->topic).size() << " clients" << std::endl;
   for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
     //int clientID = socketTable[UserID.first].socketID;
+    std::cout << "iterating " << UserID.first << std::endl;
     std::unique_lock<std::mutex> locker(mutex_socketTable);
     socketTable[UserID.first].que.push(message->id);
+    std::cout << "sending to " << subscription.getUsers(message->topic).size() << " queue size is " << socketTable[UserID.first].que.size() << std::endl;
     if (socketTable[UserID.first].que.size() == 1) {
       Client& client = socketTable[UserID.first];
       locker.unlock();
+      std::cout << "sending to " << subscription.getUsers(message->topic).size() << std::endl;
       send(client, message->message.c_str(), message->message.size());
     }
   }
+  std::cout << "end sending" << std::endl;
 }
 
 void Broker::resendAll() {
