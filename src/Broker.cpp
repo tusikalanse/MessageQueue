@@ -52,7 +52,7 @@ void Broker::run() {
 
   while (1) {
     std::unique_lock<std::mutex> lock_queue(mutex_queue);
-    std::cout << nextMessageID << std::endl;
+    std::cout << nextMessageID << " " << cnt << std::endl;
     while (messageQueue.empty()) 
       queue_isnot_empty.wait(lock_queue);
     std::shared_ptr<Message> message = messageQueue.top();
@@ -186,7 +186,7 @@ void Broker::resendAll() {
       std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
       std::shared_ptr<Message> message = table.getMessage(User.second.que.front());
       lock_messageTable.unlock();
-      std::cout << message->id << " to " << User.first << std::endl;
+      std::cout << message->id << " to " << User.first << " " << cnt << std::endl;
       if (send(User.second, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->id)).size()) < 0) {
         perror("write error");
         return;
@@ -382,6 +382,7 @@ int Broker::dealPut(Client& client, const char* buf, const char* body, int len) 
   if (strstr(body, "messageID=") != body) return 400;
   temp = strchr(body, '=') + 1;
   int id = atoi(temp);
+  //std::cout << client.UserID << " ack " << id << std::endl;
   if (!client.que.empty() && id == client.que.front()) {
     std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
     client.que.pop();
@@ -393,9 +394,12 @@ int Broker::dealPut(Client& client, const char* buf, const char* body, int len) 
       std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
       std::shared_ptr<Message> message = table.getMessage(client.que.front());
       lock_messageTable.unlock();
-      send(client, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->id)).size());
+      send(client, (message->message + "\r\n" + std::to_string(message->id)).c_str(), message->message.size() + 2 + std::to_string(message->id).size());
     }
   }
+  // else {
+  //   std::cout << client.UserID << " ack " << id << " need " << client.que.front() << std::endl; 
+  // }
   return 200;
 }
 

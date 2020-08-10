@@ -67,8 +67,8 @@ int read(int sockfd, char* buf) {
           messageID = messageID * 10 + *temp - '0';
           temp++;
         }
-        printf("received: %s\nid = %d\n", receive, messageID);
-        fflush(stdout);
+        //printf("received: %s\nid = %d\n", receive, messageID);
+        //fflush(stdout);
         ACK(toACK, messageID);
         socket_send(client_sockfd, toACK, strlen(toACK));
       }
@@ -101,7 +101,7 @@ int main() {
     perror("epoll_create1");
     exit(EXIT_FAILURE);
   }
-  ev.events = EPOLLIN; 
+  ev.events = EPOLLIN | EPOLLET; 
   ev.data.fd = client_sockfd;
   if (-1 == epoll_ctl(epollfd, EPOLL_CTL_ADD, client_sockfd, &ev)) {
     perror("epoll_ctl EPOLL_CTL_ADD fail");
