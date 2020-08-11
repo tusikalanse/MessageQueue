@@ -62,9 +62,9 @@ int main() {
   while (working) {
     int messageID = 0;
     bzero(&receive, BUFSIZ);
-    cout << "waiting" << endl;
+    //cout << "waiting" << endl;
     int ret = recv(client_sockfd, receive, BUFSIZ, 0);
-    cout << "ret = " << ret << endl;
+    //cout << "ret = " << ret << endl;
     if (ret == 0) {
       working = 0;
       printf("Server closed\n");

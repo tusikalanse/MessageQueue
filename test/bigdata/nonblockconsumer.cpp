@@ -7,6 +7,8 @@
 
 using namespace std;
 
+int cnt = 0;
+
 int working = 1;
 char receive[BUFSIZ];
 char buf[BUFSIZ];  
@@ -37,13 +39,14 @@ void subscription() {
   }
 }
 
-
 int read(int sockfd, char* buf) {
-  int res = 0;
+  cnt++;
+  int res = 0, cc = 0;
   while (1) {
     int ret = recv(sockfd, buf, BUFSIZ, 0);
     if (ret < 0) {
       if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR)) {
+        //cout << "res, cc = " << res << " " << cc << endl;
         break;
       }
       close(sockfd);
@@ -59,14 +62,17 @@ int read(int sockfd, char* buf) {
       buf[ret] = '\0';
       res += ret;
       int messageID = 0;
-      char* temp = strstr(receive, "\r\n");
-      while ((temp = strstr(receive, "\r\n")) != NULL) {
-        *temp = 0;
-        while (*temp > '9' || *temp < '0') temp++;
+      char* temp = buf;
+      while ((temp = strstr(temp, "\r\n")) != NULL) {
+        //*temp = 0;
+        while ((temp - buf < ret) && (*temp > '9' || *temp < '0')) temp++;
+        if (temp - buf >= ret) break;
+        messageID = 0;
         while ('0' <= *temp && *temp <= '9') {
           messageID = messageID * 10 + *temp - '0';
           temp++;
         }
+        cc++;
         //printf("received: %s\nid = %d\n", receive, messageID);
         //fflush(stdout);
         ACK(toACK, messageID);
@@ -76,7 +82,6 @@ int read(int sockfd, char* buf) {
   }
   return res;
 }
-
 
 int main() {
   int len;
@@ -113,6 +118,7 @@ int main() {
   t1.detach();
 
   while (working) {
+    cout << cnt << endl;
     int nfds = epoll_wait(epollfd, events, 1024, -1);
     if (-1 == nfds) {
       perror("epoll_wait fail");
@@ -121,7 +127,7 @@ int main() {
     for (int n = 0; n < nfds; ++n) {
       if (events[n].events & EPOLLIN) {
         int client_sockfd = events[n].data.fd;
-        read(client_sockfd, receive);
+        cout << "readsize = " << read(client_sockfd, receive) << endl;
       }
     }
   }

@@ -65,8 +65,8 @@ ssize_t socket_send(int sockfd, const char* buffer, size_t buflen) {
 		if(tmp < 0) {
 			if (errno == EINTR)
 				return -1;
-			if( errno == EAGAIN) {
-        usleep(1000);
+			if (errno == EAGAIN) {
+        //usleep(1000);
         continue;
       }
 			return -1;
