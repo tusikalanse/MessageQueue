@@ -32,7 +32,7 @@ int main() {
     buf[len] = '\0';
     int topic = 1;
     newMessage(message, buf, topic);
-    //cout << "sending" << endl;
+    cout << "sending" << endl;
     //send(client_sockfd, message, strlen(message), 0);
     socket_send(client_sockfd, message, strlen(message));
   }

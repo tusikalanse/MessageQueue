@@ -4,6 +4,12 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <thread>
+#include <string>
+#include <queue>
+#include <utility>
+#include <mutex>
+#include <condition_variable>
+#include <unordered_map>
 
 using namespace std;
 
@@ -14,6 +20,10 @@ char receive[BUFSIZ];
 char buf[BUFSIZ];  
 char message[BUFSIZ];
 int client_sockfd;
+
+queue<pair<string, int>> todo;
+mutex mutex_todo;
+condition_variable sthtodo;
 
 void subscription() {
   //cout << "subs" << endl;
@@ -62,6 +72,7 @@ int read(int sockfd, char* buf) {
       buf[ret] = '\0';
       res += ret;
       int messageID = 0;
+      char* prev = buf;
       char* temp = buf;
       while ((temp = strstr(temp, "\r\n")) != NULL) {
         //*temp = 0;
@@ -72,18 +83,17 @@ int read(int sockfd, char* buf) {
           messageID = messageID * 10 + *temp - '0';
           temp++;
         }
-        cc++;
-        //printf("received: %s\nid = %d\n", receive, messageID);
-        //fflush(stdout);
-        ACK(toACK, messageID);
-        socket_send(client_sockfd, toACK, strlen(toACK));
+        unique_lock<mutex> lock_todo(mutex_todo);
+        todo.push(make_pair(string(prev, strstr(prev, "\r\n") - prev), messageID));
+        prev = temp;
+        sthtodo.notify_one();
       }
     }
   }
   return res;
 }
 
-int main() {
+void listener() {
   int len;
   struct sockaddr_in remote_addr; 
   memset(&remote_addr, 0, sizeof(remote_addr)); 
@@ -92,11 +102,11 @@ int main() {
   remote_addr.sin_port = htons(SERVER_PORT); 
   if ((client_sockfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
     perror("socket error");
-    return 1;
+    exit(EXIT_FAILURE);
   }
   if (connect(client_sockfd, (struct sockaddr *)&remote_addr, sizeof(struct sockaddr)) < 0) {
     perror("connection error");
-      return 1;
+    exit(EXIT_FAILURE);
   }
   setnonblocking(client_sockfd);
   
@@ -112,11 +122,6 @@ int main() {
     perror("epoll_ctl EPOLL_CTL_ADD fail");
     exit(EXIT_FAILURE);
   }
-
-  thread t1(subscription);
-  //cout << "dd"<< endl;
-  t1.detach();
-
   while (working) {
     cout << cnt << endl;
     int nfds = epoll_wait(epollfd, events, 1024, -1);
@@ -127,9 +132,29 @@ int main() {
     for (int n = 0; n < nfds; ++n) {
       if (events[n].events & EPOLLIN) {
         int client_sockfd = events[n].data.fd;
-        cout << "readsize = " << read(client_sockfd, receive) << endl;
+        read(client_sockfd, receive);
       }
     }
+  }
+}
+
+int main() {
+  thread t1(subscription);
+  t1.detach();
+
+  thread listenThread(listener);
+  listenThread.detach();
+
+  while (1) {
+    std::unique_lock<std::mutex> lock_todo(mutex_todo);
+    while (todo.empty()) 
+      sthtodo.wait(lock_todo);
+    pair<string, int> message = todo.front();
+    todo.pop();
+    lock_todo.unlock();
+    char toACK[100];
+    ACK(toACK, message.second);
+    socket_send(client_sockfd, toACK, strlen(toACK));
   }
   return 0;
 }
