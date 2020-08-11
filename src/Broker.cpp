@@ -52,7 +52,7 @@ void Broker::run() {
 
   while (1) {
     std::unique_lock<std::mutex> lock_queue(mutex_queue);
-    std::cout << nextMessageID << " " << cnt << std::endl;
+    //std::cout << nextMessageID << " " << cnt << std::endl;
     while (messageQueue.empty()) 
       queue_isnot_empty.wait(lock_queue);
     std::shared_ptr<Message> message = messageQueue.top();
@@ -169,7 +169,7 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
     std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
     socketTable[UserID.first].que[message->id] = 1;
     // if (socketTable[UserID.first].que.size() == 1) {
-    std::cout << "Sending " << message->id << " to " << UserID.first << std::endl;
+    //std::cout << "Sending " << message->id << " to " << UserID.first << std::endl;
     Client& client = socketTable[UserID.first];
     lock_socketTable.unlock();
     send(client, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->id)).size());
@@ -398,7 +398,7 @@ int Broker::dealPut(Client& client, const char* buf, const char* body, int len) 
     lock_socketTable.unlock();
     std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
     table.ACK(id);
-    std::cout << client.UserID << " ACK " << id << std::endl;
+    //std::cout << client.UserID << " ACK " << id << std::endl;
     lock_messageTable.unlock();
     // if (!client.que.empty()) {
     //   std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
