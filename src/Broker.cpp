@@ -185,7 +185,7 @@ void Broker::resendAll() {
       if (User.second.que.empty()) continue;
       std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
       int cnt = 0;
-      std::cout << "Resending " << User.second.que.size() << std::endl;
+      std::cout << "Resending " << User.second.que.size() << " " << ccnt << std::endl;
       for (std::pair<const int, bool>& id: User.second.que) {
         if (++cnt > 100) break;
         std::shared_ptr<Message> message = table.getMessage(id.first);
@@ -267,6 +267,7 @@ int Broker::read(Client& client) {
 }
 
 int Broker::send(Client& client, const char* buf, int len) {
+  ccnt++;
   int sockfd = client.socketID;
   int pos = 0;
   while (pos < len) {

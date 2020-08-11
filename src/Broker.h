@@ -51,7 +51,7 @@ class Broker {
   static const int MAX_EVENTS = 1000;
   static const int MAX_LEN = 1024;
   //test
-  int cnt = 0;
+  int cnt = 0, ccnt = 0;
   int priorityNumber;
   int nextUserID = 0;
   int nextMessageID = 0;
