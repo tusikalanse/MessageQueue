@@ -13,7 +13,8 @@ struct Client {
   int readIDX = 0;
   // int checkIDX = 0;
   // int writeIDX = 0;
-  std::queue<int> que;
+  // std::queue<int> que;
+  __gnu_pbds::cc_hash_table<int, bool> que;
   __gnu_pbds::cc_hash_table<int, bool> subscription;
   Client() = default;
   Client(int _userID, int _socketID) : UserID(_userID), socketID(_socketID) {}
