@@ -43,7 +43,7 @@ class Broker {
   void removeClient(int sockfd);
   //static const char API[] = "HTTP/1.1 200 OK\r\nContent-Length: 25\r\n\r\n{\t\"post su\"}</html>";
   std::mutex mutex_queue;
-  std::mutex mutex_IDTable;
+  //std::mutex mutex_IDTable;
   std::mutex mutex_socketTable;
   std::mutex mutex_subscription;
   std::mutex mutex_messageTable;
@@ -51,7 +51,7 @@ class Broker {
   static const int MAX_EVENTS = 1000;
   static const int MAX_LEN = 1024;
   //test
-  int cnt = 0, ccnt = 0;
+  int cnt = 0, ccnt = 0, ACKTime = 0;
   int priorityNumber;
   int nextUserID = 0;
   int nextMessageID = 0;

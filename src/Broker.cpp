@@ -52,7 +52,7 @@ void Broker::run() {
 
   while (1) {
     std::unique_lock<std::mutex> lock_queue(mutex_queue);
-    //std::cout << nextMessageID << " " << cnt << std::endl;
+    std::cout << nextMessageID << " " << cnt << std::endl;
     while (messageQueue.empty()) 
       queue_isnot_empty.wait(lock_queue);
     std::shared_ptr<Message> message = messageQueue.top();
@@ -132,9 +132,9 @@ void Broker::server() {
         std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
         socketTable[UserID] = Client(UserID, connfd);
         lock_socketTable.unlock();
-        std::unique_lock<std::mutex> lock_IDTable(mutex_IDTable);
+        //std::unique_lock<std::mutex> lock_IDTable(mutex_IDTable);
         IDTable[connfd] = UserID;
-        lock_IDTable.unlock();
+        //lock_IDTable.unlock();
         char buff[INET_ADDRSTRLEN + 1] = {0};
         inet_ntop(AF_INET, &cliaddr.sin_addr, buff, INET_ADDRSTRLEN);
         uint16_t port = ntohs(cliaddr.sin_port);
@@ -150,12 +150,13 @@ void Broker::server() {
 }
 
 void Broker::work(int client_sockfd) {
-  std::unique_lock<std::mutex> lock_IDTable(mutex_IDTable);
+  //std::unique_lock<std::mutex> lock_IDTable(mutex_IDTable);
   int UserID = IDTable[client_sockfd];
-  lock_IDTable.unlock();
+  //lock_IDTable.unlock();
   std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
   Client& client = socketTable[UserID];
   lock_socketTable.unlock();
+  client.alive = 1;
   read(client);
 }
 
@@ -172,6 +173,7 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
     //std::cout << "Sending " << message->id << " to " << UserID.first << std::endl;
     Client& client = socketTable[UserID.first];
     lock_socketTable.unlock();
+    if (client.alive == 0) continue;
     send(client, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->id)).size());
     // }
   }
@@ -180,9 +182,11 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
 void Broker::resendAll() {
   while (1) {
     sleep(refreshTimeout);
+    std::cout << " ACKTime is " << ACKTime << std::endl;
     std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
     for (std::pair<const int, Client>& User : socketTable) {
       if (User.second.que.empty()) continue;
+      if (User.second.alive == 0) continue;
       std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
       int cnt = 0;
       std::cout << "Resending " << User.second.que.size() << " " << ccnt << std::endl;
@@ -196,10 +200,10 @@ void Broker::resendAll() {
 }
 
 void Broker::removeClient(int sockfd) {
-  std::unique_lock<std::mutex> lock_IDTable(mutex_IDTable);
+  ///std::unique_lock<std::mutex> lock_IDTable(mutex_IDTable);
   int UserID = IDTable[sockfd];
   IDTable.erase(UserID);
-  lock_IDTable.unlock();
+  //lock_IDTable.unlock();
   std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
   Client& client = socketTable[UserID];
   lock_socketTable.unlock();
@@ -231,6 +235,7 @@ void Broker::setnonblocking(int sockfd) {
 }
 
 int Broker::read(Client& client) {
+  std::cout << "reading " << std::endl;
   int sockfd = client.socketID;
   char* buf = client.buf + client.readIDX;
   int res = 0;
@@ -262,16 +267,23 @@ int Broker::read(Client& client) {
 int Broker::send(Client& client, const char* buf, int len) {
   ccnt++;
   int sockfd = client.socketID;
-  int pos = 0;
+  int pos = 0, cnt = 0;
   while (pos < len) {
     int ret = ::send(sockfd, buf + pos, len - pos, 0);
     if (-1 == ret) {
       if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR)) {
         ret = 0;
+        if (++cnt > 10) {
+          client.alive = 0;
+          return 0;
+        }
+        perror("error: ");
+        std::cout << "sending to " << client.UserID << std::endl;
         continue;
       }
       return 0;
     }
+    cnt = 0;
     pos += ret;
   }
   return pos;
@@ -395,6 +407,7 @@ int Broker::dealPut(Client& client, const char* buf, const char* body, int len) 
     client.que.erase(id);
     lock_socketTable.unlock();
     std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
+    ACKTime++;
     table.ACK(id);
     //std::cout << client.UserID << " ACK " << id << std::endl;
     lock_messageTable.unlock();

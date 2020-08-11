@@ -7,6 +7,7 @@
 #include <ext/pb_ds/hash_policy.hpp>
 
 struct Client {
+  int alive = 1;
   int UserID;
   int socketID;
   char buf[BUFSIZ];
