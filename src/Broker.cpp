@@ -301,13 +301,18 @@ void Broker::HTTPParser(Client& client) {
       }
       int length = 0;
       char ch = *temp;
+      if (NULL == strstr(temp, "\r\n\r\n")) {
+        strncpy(client.buf, client.buf + IDX, n - IDX);
+        client.readIDX = n - IDX;
+        return;
+      }
       while (ch < '0' || ch > '9') ch = *++temp;
       while (ch >= '0' && ch <= '9') {
         length = length * 10 + ch - '0';
         ch = *++temp;
       }
       temp = strstr(temp, "\r\n\r\n");
-      if (temp == NULL || temp + 4 + length > client.buf + n) {
+      if (temp + 4 + length > client.buf + n) {
         strncpy(client.buf, client.buf + IDX, n - IDX);
         client.readIDX = n - IDX;
         return;
