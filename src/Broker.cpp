@@ -187,17 +187,10 @@ void Broker::resendAll() {
       int cnt = 0;
       std::cout << "Resending " << User.second.que.size() << " " << ccnt << std::endl;
       for (std::pair<const int, bool>& id: User.second.que) {
-        if (++cnt > 100) break;
+        if (++cnt > 10000) break;
         std::shared_ptr<Message> message = table.getMessage(id.first);
         send(User.second, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->id)).size());
       }
-      // std::shared_ptr<Message> message = table.getMessage(User.second.que.front());
-      // lock_messageTable.unlock();
-      // std::cout << message->id << " to " << User.first << " " << cnt << std::endl;
-      // if (send(User.second, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->id)).size()) < 0) {
-        // perror("write error");
-        // return;
-      // }
     }
   }
 }
@@ -392,8 +385,8 @@ int Broker::dealPut(Client& client, const char* buf, const char* body, int len) 
   temp = strchr(body, '=') + 1;
   int id = atoi(temp);
   //std::cout << client.UserID << " ack " << id << std::endl;
+  std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
   if (client.que.find(id) != client.que.end()) {
-    std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
     client.que.erase(id);
     lock_socketTable.unlock();
     std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
