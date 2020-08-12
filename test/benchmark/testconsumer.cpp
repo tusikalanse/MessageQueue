@@ -13,6 +13,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <unordered_map>
+#include <cassert>
 
 int cnt = 0;
 
@@ -21,6 +22,8 @@ char receive[BUFSIZ];
 char buf[BUFSIZ];  
 char message[BUFSIZ];
 int client_sockfd;
+
+int topicNumber, subscriptionsPerConsumer, consumerMessage;
 
 unordered_map<int, int> vis;
 
@@ -104,6 +107,7 @@ for (int topic = 0; topic < sub.size(); ++topic) {
     if (sub[topic] == 0) continue;
     newSubscription(message, topic);
     socket_send(client_sockfd, message, strlen(message));
+    cout << "sub topic " << topic << endl;
 }
 
 while (working) {
@@ -122,29 +126,34 @@ while (working) {
 }
 }
 
-int main(int topicNumber, int subscriptionsPerConsumer, int consumerMessage) {
-vector<int> sub;
-for (int i = 0; i < subscriptionsPerConsumer; ++i) sub.push_back(1);
-for (int i = subscriptionsPerConsumer; i < topicNumber; ++i) sub.push_back(0);
-random_shuffle(sub.begin(), sub.end());
-thread listenThread(listener, ref(sub));
-listenThread.detach();
+int main(int argc, char** argv) {
+    assert(argc == 4);
+    topicNumber = atoi(argv[1]);
+    subscriptionsPerConsumer = atoi(argv[2]);
+    consumerMessage = atoi(argv[3]);
+    vector<int> sub;
+    for (int i = 0; i < subscriptionsPerConsumer; ++i) sub.push_back(1);
+    for (int i = subscriptionsPerConsumer; i < topicNumber; ++i) sub.push_back(0);
+    random_shuffle(sub.begin(), sub.end());
+    thread listenThread(listener, ref(sub));
+    listenThread.detach();
 
-while (1) {
-    std::unique_lock<std::mutex> lock_todo(mutex_todo);
-    while (todo.empty()) 
-    sthtodo.wait(lock_todo);
-    pair<string, int> message = todo.front();
-    todo.pop();
-    lock_todo.unlock();
-    char toACK[100];
-    ACK(toACK, message.second);
-    socket_send(client_sockfd, toACK, strlen(toACK));
-    vis[message.second] = 0;
-    if (vis.size() == consumerMessage) {
-    working = 0;
-    break;
+    while (1) {
+        std::unique_lock<std::mutex> lock_todo(mutex_todo);
+        while (todo.empty()) 
+        sthtodo.wait(lock_todo);
+        pair<string, int> message = todo.front();
+        todo.pop();
+        lock_todo.unlock();
+        char toACK[100];
+        ACK(toACK, message.second);
+        socket_send(client_sockfd, toACK, strlen(toACK));
+        vis[message.second] = 1;
+        cout << message.second << endl;
+        if (vis.size() == consumerMessage) {
+        working = 0;
+        break;
+        }
     }
-}
-return 0;
+    return 0;
 }

@@ -28,17 +28,6 @@ int main() {
   }
 
   setnonblocking(client_sockfd);
-  for (int i = 1; i <= 100000; ++i) {
-    int len = rand() % 10 + 10;
-    for (int j = 0; j < len; ++j)
-      buf[j] = 'a' + rand() % 26;
-    buf[len] = '\0';
-    int topic = 1;
-    newMessage(message, buf, topic, 1);
-    //cout << "sending" << endl;
-    //send(client_sockfd, message, strlen(message), 0);
-    socket_send(client_sockfd, message, strlen(message));
-  }
   for (int i = 100; i >= 1; --i) {
     int len = 1 + getLen(i);
     buf[0] = 'p';
