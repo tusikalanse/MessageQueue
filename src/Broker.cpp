@@ -50,9 +50,10 @@ void Broker::run() {
   std::thread ticker(&Broker::resendAll, this);
   ticker.detach();
 
+  sleep(20);
+
   while (1) {
     std::unique_lock<std::mutex> lock_queue(mutex_queue);
-    std::cout << nextMessageID << " " << cnt << std::endl;
     while (messageQueue.empty()) 
       queue_isnot_empty.wait(lock_queue);
     std::shared_ptr<Message> message = messageQueue.top();
@@ -183,13 +184,15 @@ void Broker::resendAll() {
   while (1) {
     sleep(refreshTimeout);
     std::cout << " ACKTime is " << ACKTime << std::endl;
+    std::cout << " nextMessageID is " << nextMessageID << std::endl;
+    std::cout << " nextUserID is " << nextUserID << std::endl;
     std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
     for (std::pair<const int, Client>& User : socketTable) {
       if (User.second.que.empty()) continue;
       if (User.second.alive == 0) continue;
       std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
       int cnt = 0;
-      std::cout << "Resending " << User.second.que.size() << " " << ccnt << std::endl;
+      //std::cout << "Resending " << User.second.que.size() << " " << ccnt << std::endl;
       for (std::pair<const int, bool>& id: User.second.que) {
         if (++cnt > 10000) break;
         std::shared_ptr<Message> message = table.getMessage(id.first);
@@ -235,7 +238,7 @@ void Broker::setnonblocking(int sockfd) {
 }
 
 int Broker::read(Client& client) {
-  std::cout << "reading " << std::endl;
+  //std::cout << "reading " << std::endl;
   int sockfd = client.socketID;
   char* buf = client.buf + client.readIDX;
   int res = 0;
@@ -274,11 +277,11 @@ int Broker::send(Client& client, const char* buf, int len) {
       if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR)) {
         ret = 0;
         if (++cnt > 10) {
-          client.alive = 0;
+          // client.alive = 0;
           return 0;
         }
-        perror("error: ");
-        std::cout << "sending to " << client.UserID << std::endl;
+        //perror("error: ");
+        //std::cout << "sending to " << client.UserID << std::endl;
         continue;
       }
       return 0;
@@ -335,8 +338,12 @@ void Broker::HTTPParser(Client& client) {
         dealPost(client, client.buf + IDX, temp + 4, length);
       else if (client.buf[IDX + 1] == 'U')
         dealPut(client, client.buf + IDX, temp + 4, length);
-      else if (IDX != n) 
+      else if (IDX != n) {
         std::cerr << "Bad Request" << std::endl;
+        std::cout << client.buf << std::endl;
+        std::cout << "IDX, n = " << IDX << " " << n << std::endl;
+        std::cout << "near IDX = " << client.buf[IDX] << client.buf[IDX + 1] << client.buf[IDX + 2] << client.buf[IDX + 3] << client.buf[IDX + 4] << client.buf[IDX + 5] << client.buf[IDX + 6] << client.buf[IDX + 7] << client.buf[IDX + 8] << client.buf[IDX + 9] << client.buf[IDX + 10] << std::endl;
+      }
       IDX = temp - client.buf + length + 4;
     }
   }
@@ -377,7 +384,8 @@ int Broker::dealPost(Client& client, const char* buf, const char* body, int len)
       int topic = atoi(temp);
       std::string str(body + 8, temp - body - 15);
       std::unique_lock<std::mutex> lock_queue(mutex_queue);
-      messageQueue.push(std::make_shared<Message>(PriorityMessage(client.UserID, topic, str, nextMessageID++, priority)));
+      std::cout << "priority = " << priority << std::endl;
+      messageQueue.push(std::make_shared<PriorityMessage>(PriorityMessage(client.UserID, topic, str, nextMessageID++, priority)));
     }
     else {
       temp = strstr(body, "&topic=") + 7;

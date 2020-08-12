@@ -17,7 +17,20 @@
 #define MAX_LEN 1024
 
 int main() {
-  Broker server(8000);
+  Broker server(8000, 10000000);
   server.run();
   std::cout << "end" << std::endl;
 }
+
+
+// #include "../src/MyPriorityQueue.h"
+// using namespace std;
+
+// int main() {
+//   MyPriorityQueue pq;
+//   pq.push(make_shared<Message>(PriorityMessage(1, 1, "1", 1, 2)));
+//   pq.push(make_shared<Message>(PriorityMessage(1, 1, "1", 3, 444)));
+
+
+//   return 0;
+// }

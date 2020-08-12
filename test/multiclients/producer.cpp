@@ -24,19 +24,20 @@ int main() {
     perror("connection error");
     return 1;
   }
-
+  //cout << "connection established" <<endl;
   setnonblocking(client_sockfd);
-  for (int i = 1; i <= 100000; ++i) {
+  for (int i = 1; i <= 10; ++i) {
     int len = rand() % 10 + 10;
     for (int j = 0; j < len; ++j)
       buf[j] = 'a' + rand() % 26;
     buf[len] = '\0';
-    int topic = 1;
+    int topic = rand() % 10;
     newMessage(message, buf, topic);
     //cout << "sending" << endl;
     //send(client_sockfd, message, strlen(message), 0);
     socket_send(client_sockfd, message, strlen(message));
   }
   close(client_sockfd);
+  cout << "send 10000 messages end" << endl;
   return 0;
 }

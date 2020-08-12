@@ -60,20 +60,22 @@ ssize_t socket_send(int sockfd, const char* buffer, size_t buflen) {
 	ssize_t tmp;
 	size_t total = buflen;
 	const char *p = buffer;	
+  int cnt;
 	while (1) {
 		tmp = send(sockfd, p, total, 0);
 		if(tmp < 0) {
 			if (errno == EINTR)
 				return -1;
-			if (errno == EAGAIN) {
-        //usleep(1000);
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        usleep(1000);
         continue;
       }
 			return -1;
     }
 		if ((size_t)tmp == total)
 			return buflen;
-		total -= tmp;
+		cnt = 0;
+    total -= tmp;
     p += tmp;
 	}
 	return tmp;

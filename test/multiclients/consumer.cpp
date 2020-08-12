@@ -21,35 +21,9 @@ char buf[BUFSIZ];
 char message[BUFSIZ];
 int client_sockfd;
 
-unordered_map<int, bool> vis;
-
 queue<pair<string, int>> todo;
 mutex mutex_todo;
 condition_variable sthtodo;
-
-void subscription() {
-  //cout << "subs" << endl;
-  while (working) {
-    printf("input EXIT to exit, S to subscribe, D to delete subscription:");
-    int topic = 904350;
-    scanf("%s", buf);
-    if (strcmp(buf, "EXIT") == 0) {
-      working = 0;
-      continue;
-    }
-    printf("please input the topic: ");
-    scanf("%d", &topic);
-    printf("topic is %d\n", topic);
-    if (buf[0] == 'S')
-      newSubscription(message, topic);
-    else if (buf[0] == 'D')
-      deleteSubscription(message, topic);
-    else  
-      continue;
-    //cout << "sending" << endl;
-    socket_send(client_sockfd, message, strlen(message));
-  }
-}
 
 int read(int sockfd, char* buf) {
   cnt++;
@@ -89,10 +63,6 @@ int read(int sockfd, char* buf) {
         todo.push(make_pair(string(prev, strstr(prev, "\r\n") - prev), messageID));
         prev = temp;
         sthtodo.notify_one();
-        //printf("received: %s\nid = %d\n", receive, messageID);
-        //fflush(stdout);
-        // ACK(toACK, messageID);
-        // socket_send(client_sockfd, toACK, strlen(toACK));
       }
     }
   }
@@ -128,14 +98,20 @@ void listener() {
     perror("epoll_ctl EPOLL_CTL_ADD fail");
     exit(EXIT_FAILURE);
   }
+
+  for (int topic = 0; topic < 10; ++topic) {
+    if (rand() % 4 != 0) continue;
+    newSubscription(message, topic);
+    socket_send(client_sockfd, message, strlen(message));
+  }
+
   while (working) {
-    //cout << cnt << endl;
+    cout << cnt << endl;
     int nfds = epoll_wait(epollfd, events, 1024, -1);
     if (-1 == nfds) {
       perror("epoll_wait fail");
       exit(EXIT_FAILURE);
     }
-    //cout << cnt << endl;
     for (int n = 0; n < nfds; ++n) {
       if (events[n].events & EPOLLIN) {
         int client_sockfd = events[n].data.fd;
@@ -146,25 +122,19 @@ void listener() {
 }
 
 int main() {
-  thread t1(subscription);
-  t1.detach();
-
   thread listenThread(listener);
   listenThread.detach();
 
   while (1) {
-    cout << "dealed " << vis.size() << "Messages" << endl;
     std::unique_lock<std::mutex> lock_todo(mutex_todo);
     while (todo.empty()) 
       sthtodo.wait(lock_todo);
     pair<string, int> message = todo.front();
     todo.pop();
     lock_todo.unlock();
-      vis[message.second] = 1;
-      char toACK[100];
-      ACK(toACK, message.second);
-      cout << "sending" << endl;
-      socket_send(client_sockfd, toACK, strlen(toACK));
+    char toACK[100];
+    ACK(toACK, message.second);
+    socket_send(client_sockfd, toACK, strlen(toACK));
   }
   return 0;
 }

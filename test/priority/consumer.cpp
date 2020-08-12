@@ -153,7 +153,7 @@ int main() {
   listenThread.detach();
 
   while (1) {
-    cout << "dealed " << vis.size() << "Messages" << endl;
+    //cout << "dealed " << vis.size() << "Messages" << endl;
     std::unique_lock<std::mutex> lock_todo(mutex_todo);
     while (todo.empty()) 
       sthtodo.wait(lock_todo);
@@ -161,9 +161,11 @@ int main() {
     todo.pop();
     lock_todo.unlock();
       vis[message.second] = 1;
+      if (message.first[0] == 'p')
+        cout << message.first << endl;
       char toACK[100];
       ACK(toACK, message.second);
-      cout << "sending" << endl;
+      //cout << "sending" << endl;
       socket_send(client_sockfd, toACK, strlen(toACK));
   }
   return 0;
