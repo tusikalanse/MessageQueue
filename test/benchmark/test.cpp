@@ -1,5 +1,7 @@
 #include <benchmark/benchmark.h>
 #include <array>
+#include <iostream>
+using namespace std;
 
 // constexpr int len = 6;
 
@@ -57,20 +59,37 @@
 // }
 // BENCHMARK(bench_array_get);
 
-static void bench_simple_producer1000(benchmark::State& state) {
+// static void bench_simple_producer1000(benchmark::State& state) {
+//     for (auto _: state) {
+//         system("./testproducer 1000 10 20 10");
+//     }
+// }
+
+// BENCHMARK(bench_simple_producer1000)->Iterations(10);
+
+// static void bench_simple_producer100000(benchmark::State& state) {
+//     for (auto _: state) {
+//         system("./testproducer 100000 10 20 10");
+//     }
+// }
+
+// BENCHMARK(bench_simple_producer100000)->Iterations(10);
+
+// static void bench_simple_consumer(benchmark::State& state) {
+//     for (auto _: state) {
+//         system("./testconsumer 2 2 100000 &");
+//     }
+// }
+
+// BENCHMARK(bench_simple_consumer);
+
+static void bench_test(benchmark::State& state) {
+    cout << "dd" << endl;
     for (auto _: state) {
-        system("./testproducer 1000 10 20 10");
+        //cout << "dd" << endl;
     }
 }
 
-BENCHMARK(bench_simple_producer1000)->Iterations(10);
-
-static void bench_simple_producer100000(benchmark::State& state) {
-    for (auto _: state) {
-        system("./testproducer 100000 10 20 10");
-    }
-}
-
-BENCHMARK(bench_simple_producer100000)->Iterations(10);
+BENCHMARK(bench_test);
 
 BENCHMARK_MAIN();

@@ -107,7 +107,7 @@ for (int topic = 0; topic < sub.size(); ++topic) {
     if (sub[topic] == 0) continue;
     newSubscription(message, topic);
     socket_send(client_sockfd, message, strlen(message));
-    cout << "sub topic " << topic << endl;
+    //cout << "sub topic " << topic << endl;
 }
 
 while (working) {
@@ -149,10 +149,10 @@ int main(int argc, char** argv) {
         ACK(toACK, message.second);
         socket_send(client_sockfd, toACK, strlen(toACK));
         vis[message.second] = 1;
-        cout << message.second << endl;
+        //cout << message.second << endl;
         if (vis.size() == consumerMessage) {
-        working = 0;
-        break;
+            working = 0;
+            break;
         }
     }
     return 0;
