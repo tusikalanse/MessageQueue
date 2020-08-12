@@ -9,7 +9,7 @@
 #include <cstring>
 using namespace std;
 
-#define SERVER_IP "9.134.237.210"
+#define SERVER_IP "127.0.0.1"
 
 #define SERVER_PORT 8000
 

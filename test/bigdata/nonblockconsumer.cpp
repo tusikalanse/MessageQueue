@@ -89,10 +89,6 @@ int read(int sockfd, char* buf) {
         todo.push(make_pair(string(prev, strstr(prev, "\r\n") - prev), messageID));
         prev = temp;
         sthtodo.notify_one();
-        //printf("received: %s\nid = %d\n", receive, messageID);
-        //fflush(stdout);
-        // ACK(toACK, messageID);
-        // socket_send(client_sockfd, toACK, strlen(toACK));
       }
     }
   }

@@ -16,8 +16,12 @@
 #define MAX_EVENTS 1000
 #define MAX_LEN 1024
 
-int main() {
-  Broker server(8000, 10000000);
+int main(int argc, char **argv) {
+  int priority = 0;
+  if (argc != 1) {
+    priority = atoi(argv[1]);
+  }
+  Broker server(8000, priority);
   server.run();
   std::cout << "end" << std::endl;
 }

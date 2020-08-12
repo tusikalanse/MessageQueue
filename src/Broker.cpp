@@ -50,7 +50,8 @@ void Broker::run() {
   std::thread ticker(&Broker::resendAll, this);
   ticker.detach();
 
-  sleep(20);
+  if (priorityNumber != 0)
+    sleep(20); //just for testing
 
   while (1) {
     std::unique_lock<std::mutex> lock_queue(mutex_queue);
