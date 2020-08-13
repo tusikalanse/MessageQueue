@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
     }
 
     setnonblocking(client_sockfd);
-    for (int i = 0; i < messageNumberPerProducer; ++i) {
+    while (1) {
+      for (int i = 1; i < messageNumberPerProducer; ++i) {
         int len = rand() % messageRandLen + messageLenMin;
         buf[0] = 'a';
         for (int j = 1; j < len; ++j)
@@ -57,7 +58,15 @@ int main(int argc, char** argv) {
         int topic = i / messageNumberPerTopic;
         newMessage(message, buf, topic);
         socket_send(client_sockfd, message, strlen(message));
-    }
+      }
+      len = 3;
+      buf[0] = 'e', buf[1] = 'n', buf[2] = 'd';
+      buf[3] = '\0';
+      int topic = topicNumber;
+      newMessage(message, buf, topic);
+      socket_send(client_sockfd, message, strlen(message));
+      sleep(1);
+    }    
     close(client_sockfd);
     return 0;
 }

@@ -8,10 +8,10 @@ echo $consumerMessage
 for ((i=1; i<=$6; i++)) 
 do  
 ./testconsumer $5 $7 $consumerMessage &
-sleep 0.1
+# sleep 0.1
 done  
 
-# sleep 5
+sleep 0.1
 # echo $1
 for ((i=1; i<=$1; i++)) 
 do  

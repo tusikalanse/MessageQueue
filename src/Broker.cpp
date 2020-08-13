@@ -168,11 +168,13 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
   std::unique_lock<std::mutex> lock_messageTable(mutex_messageTable);
   table.addMessage(message->id, make_pair(message, num));
   lock_messageTable.unlock();    
-  for (std::pair<int, bool> UserID : subscription.getUsers(message->topic)) {
+  __gnu_pbds::cc_hash_table<int, bool> sub = subscription.getUsers(message->topic);
+  lock_subscription.unlock();
+  for (std::pair<int, bool> UserID : sub) {
     std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
     socketTable[UserID.first].que[message->id] = 1;
     // if (socketTable[UserID.first].que.size() == 1) {
-    //std::cout << "Sending " << message->id << " to " << UserID.first << std::endl;
+    //std::cout << "Sending " << message->id << " to " << UserID.first << " " << socketTable[UserID.first].alive << std::endl;
     Client& client = socketTable[UserID.first];
     lock_socketTable.unlock();
     if (client.alive == 0) continue;
@@ -184,9 +186,10 @@ void Broker::sendMessage(std::shared_ptr<Message> message) {
 void Broker::resendAll() {
   while (1) {
     sleep(refreshTimeout);
-    std::cout << " ACKTime is " << ACKTime << std::endl;
-    std::cout << " nextMessageID is " << nextMessageID << std::endl;
-    std::cout << " nextUserID is " << nextUserID << std::endl;
+    // std::cout << " ACKTime is " << ACKTime << std::endl;
+    // std::cout << " nextMessageID is " << nextMessageID << std::endl;
+    // std::cout << " nextUserID is " << nextUserID << std::endl;
+    // std::cout << " MQ size is " << messageQueue.size() << std::endl;
     std::unique_lock<std::mutex> lock_socketTable(mutex_socketTable);
     for (std::pair<const int, Client>& User : socketTable) {
       if (User.second.que.empty()) continue;
@@ -197,6 +200,8 @@ void Broker::resendAll() {
       for (std::pair<const int, bool>& id: User.second.que) {
         if (++cnt > 10000) break;
         std::shared_ptr<Message> message = table.getMessage(id.first);
+        if (message == nullptr) continue;
+        //std::cout << "Resending " << message->message << " to " << User.second.UserID << std::endl;
         send(User.second, (message->message + "\r\n" + std::to_string(message->id)).c_str(), (message->message + "\r\n" + std::to_string(message->id)).size());
       }
     }
@@ -278,7 +283,7 @@ int Broker::send(Client& client, const char* buf, int len) {
       if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR)) {
         ret = 0;
         if (++cnt > 10) {
-          // client.alive = 0;
+          client.alive = 0;
           return 0;
         }
         //perror("error: ");
@@ -287,6 +292,10 @@ int Broker::send(Client& client, const char* buf, int len) {
       }
       return 0;
     }
+    else if (0 == ret) {
+      return 0;
+    }
+    //std::cout << ret << std::endl;
     cnt = 0;
     pos += ret;
   }
@@ -340,10 +349,10 @@ void Broker::HTTPParser(Client& client) {
       else if (client.buf[IDX + 1] == 'U')
         dealPut(client, client.buf + IDX, temp + 4, length);
       else if (IDX != n) {
-        std::cerr << "Bad Request" << std::endl;
-        std::cout << client.buf << std::endl;
-        std::cout << "IDX, n = " << IDX << " " << n << std::endl;
-        std::cout << "near IDX = " << client.buf[IDX] << client.buf[IDX + 1] << client.buf[IDX + 2] << client.buf[IDX + 3] << client.buf[IDX + 4] << client.buf[IDX + 5] << client.buf[IDX + 6] << client.buf[IDX + 7] << client.buf[IDX + 8] << client.buf[IDX + 9] << client.buf[IDX + 10] << std::endl;
+        // std::cerr << "Bad Request" << std::endl;
+        // std::cout << client.buf << std::endl;
+        // std::cout << "IDX, n = " << IDX << " " << n << std::endl;
+        // std::cout << "near IDX = " << client.buf[IDX] << client.buf[IDX + 1] << client.buf[IDX + 2] << client.buf[IDX + 3] << client.buf[IDX + 4] << client.buf[IDX + 5] << client.buf[IDX + 6] << client.buf[IDX + 7] << client.buf[IDX + 8] << client.buf[IDX + 9] << client.buf[IDX + 10] << std::endl;
       }
       IDX = temp - client.buf + length + 4;
     }
@@ -369,6 +378,7 @@ int Broker::dealPost(Client& client, const char* buf, const char* body, int len)
     int id = atoi(temp);
     std::unique_lock<std::mutex> lock_subscription(mutex_subscription);
     subscription.addSubscription(id, client.UserID);
+    // std::cout << client.UserID << " subscribed " << id << std::endl;
     client.subscription[id] = 1;
     return 200;
   }
@@ -385,7 +395,7 @@ int Broker::dealPost(Client& client, const char* buf, const char* body, int len)
       int topic = atoi(temp);
       std::string str(body + 8, temp - body - 15);
       std::unique_lock<std::mutex> lock_queue(mutex_queue);
-      std::cout << "priority = " << priority << std::endl;
+      //std::cout << "priority = " << priority << std::endl;
       messageQueue.push(std::make_shared<PriorityMessage>(PriorityMessage(client.UserID, topic, str, nextMessageID++, priority)));
     }
     else {

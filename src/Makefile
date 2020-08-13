@@ -48,10 +48,10 @@ RM = /usr/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /root/MQ/MessageQueue/src
+CMAKE_SOURCE_DIR = /root/MQ/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /root/MQ/MessageQueue/src
+CMAKE_BINARY_DIR = /root/MQ/src
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /root/MQ/MessageQueue/src/CMakeFiles /root/MQ/MessageQueue/src/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /root/MQ/src/CMakeFiles /root/MQ/src/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /root/MQ/MessageQueue/src/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /root/MQ/src/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
